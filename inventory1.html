@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Inventory">
+<title>Equipment Inventory</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,sans-serif;background:#f0f4f8;padding-bottom:90px}
+.hdr{background:#1e3a5f;color:#fff;padding:14px 16px;position:sticky;top:0;z-index:99;display:flex;align-items:center;justify-content:space-between}
+.hdr-left h1{font-size:17px;font-weight:700}
+.hdr-left p{font-size:11px;opacity:0.6;margin-top:1px}
+.hdr-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:12px;font-weight:600;padding:7px 11px;border-radius:8px;cursor:pointer}
+.sbar{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border-bottom:1px solid #e2e8f0;padding:8px 0}
+.st{text-align:center}
+.sn{font-size:20px;font-weight:700;color:#1e3a5f}
+.sn.g{color:#1e4d2b}.sn.r{color:#991b1b}
+.sl{font-size:10px;color:#64748b;text-transform:uppercase}
+.ftabs{display:flex;background:#fff;border-bottom:2px solid #e2e8f0;overflow-x:auto}
+.ftabs::-webkit-scrollbar{display:none}
+.ft{flex-shrink:0;padding:9px 13px;font-size:13px;font-weight:500;color:#64748b;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.ft.on{color:#1e3a5f;border-bottom-color:#1e3a5f}
+.sec{margin:10px 12px 0}
+.shd{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;border-radius:9px;margin-bottom:6px}
+.shd-left{display:flex;align-items:center;gap:8px}
+.shd span{font-size:13px;font-weight:600;color:#fff}
+.shd-edit{background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:11px;padding:3px 8px;border-radius:6px;cursor:pointer}
+.card{background:#fff;border-radius:11px;padding:11px 12px;margin-bottom:6px;display:flex;align-items:center;gap:9px;box-shadow:0 1px 3px rgba(0,0,0,0.07)}
+.card.sold{opacity:0.5}
+.ci{flex:1;min-width:0}
+.cn{font-size:14px;font-weight:600;color:#1a202c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card.sold .cn{text-decoration:line-through}
+.cp{font-size:12px;color:#1e3a5f;font-weight:600;margin-top:2px}
+.bgs{display:flex;gap:3px;margin-top:5px;flex-wrap:wrap}
+.bg{font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px}
+.f1{background:#dbeafe;color:#1e40af}
+.f2{background:#ede9fe;color:#5b21b6}
+.cl{background:#fee2e2;color:#991b1b}
+.sd{background:#dcfce7;color:#166534}
+.ca{display:flex;flex-direction:column;gap:5px;align-items:center;flex-shrink:0}
+.bs{font-size:11px;font-weight:600;padding:5px 8px;border-radius:7px;border:1.5px solid #cbd5e1;background:#fff;color:#64748b;cursor:pointer}
+.bs.on{background:#dcfce7;border-color:#86efac;color:#166534}
+.icon-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:3px;color:#94a3b8}
+.empty{text-align:center;padding:40px;color:#94a3b8;font-size:14px}
+.fab{position:fixed;bottom:26px;right:18px;width:56px;height:56px;border-radius:50%;background:#1e3a5f;color:#fff;font-size:28px;border:none;box-shadow:0 4px 14px rgba(30,58,95,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:200}
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;align-items:flex-end}
+.ov.open{display:flex}
+.mod{background:#fff;border-radius:20px 20px 0 0;padding:20px 16px 44px;width:100%;max-height:90vh;overflow-y:auto}
+.mod h2{font-size:16px;font-weight:700;margin-bottom:14px;color:#1a202c}
+.mod label{display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin:12px 0 4px}
+.mod input,.mod select{width:100%;padding:11px;font-size:15px;border:1.5px solid #e2e8f0;border-radius:9px;background:#f8fafc;color:#1a202c;-webkit-appearance:none;outline:none}
+.mod input:focus,.mod select:focus{border-color:#1e3a5f;background:#fff}
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:5px}
+.po{padding:10px 4px;border:1.5px solid #e2e8f0;border-radius:9px;text-align:center;font-size:12px;font-weight:700;color:#64748b;background:#f8fafc;cursor:pointer}
+.pf1{background:#dbeafe;border-color:#93c5fd;color:#1e40af}
+.pf2{background:#ede9fe;border-color:#c4b5fd;color:#5b21b6}
+.pcl{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+.ma{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px}
+.bc{padding:12px;border-radius:11px;border:1.5px solid #e2e8f0;background:#fff;font-size:15px;font-weight:600;color:#64748b;cursor:pointer}
+.bsv{padding:12px;border-radius:11px;border:none;background:#1e3a5f;font-size:15px;font-weight:600;color:#fff;cursor:pointer}
+.cat-list{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.cat-row{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 12px}
+.cat-color{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.cat-name{flex:1;font-size:14px;font-weight:600;color:#1a202c}
+.cat-count{font-size:12px;color:#94a3b8}
+.cat-del{background:none;border:none;font-size:16px;cursor:pointer;color:#cbd5e1;padding:2px}
+.color-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:6px}
+.color-opt{width:36px;height:36px;border-radius:50%;cursor:pointer;border:3px solid transparent}
+.color-opt.sel{border-color:#1e3a5f}
+.add-cat-row{display:flex;gap:8px;margin-top:10px}
+.add-cat-row input{flex:1;padding:10px;font-size:14px;border:1.5px solid #e2e8f0;border-radius:9px;background:#f8fafc;color:#1a202c;outline:none}
+.add-cat-btn{padding:10px 16px;border-radius:9px;border:none;background:#1e3a5f;color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.danger-btn{width:100%;margin-top:10px;padding:11px;border-radius:9px;border:1.5px solid #fca5a5;background:#fff;color:#991b1b;font-size:14px;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-left"><h1>⚙️ Equipment Inventory</h1><p>Tap + to add · ✏️ to edit</p></div>
+  <button class="hdr-btn" onclick="openCats()">📂 Categories</button>
+</div>
+<div class="sbar">
+  <div class="st"><div class="sn" id="nt">0</div><div class="sl">Total</div></div>
+  <div class="st"><div class="sn g" id="na">0</div><div class="sl">Available</div></div>
+  <div class="st"><div class="sn r" id="ns">0</div><div class="sl">Sold</div></div>
+</div>
+<div class="ftabs" id="ftabs"></div>
+<div id="lst"></div>
+<button class="fab" onclick="opn()">+</button>
+
+<!-- Item modal -->
+<div class="ov" id="ov" onclick="bgc(event)">
+  <div class="mod">
+    <h2 id="modTitle">Add new item</h2>
+    <label>Name</label><input id="iN" type="text" placeholder="e.g. Stihl MS271">
+    <label>Price</label><input id="iP" type="text" placeholder="e.g. $350">
+    <label>Category</label>
+    <select id="iC"></select>
+    <label>Post on</label>
+    <div class="pg">
+      <div id="pF1" class="po pf1" onclick="tp('F1')">Facebook 1</div>
+      <div id="pF2" class="po pf2" onclick="tp('F2')">Facebook 2</div>
+      <div id="pCL" class="po" onclick="tp('CL')">Craigslist</div>
+    </div>
+    <div class="ma">
+      <button class="bc" onclick="cls()">Cancel</button>
+      <button class="bsv" id="saveBtn" onclick="svi()">Add item</button>
+    </div>
+  </div>
+</div>
+
+<!-- Categories modal -->
+<div class="ov" id="ovCat" onclick="bgcCat(event)">
+  <div class="mod">
+    <h2>📂 Manage Categories</h2>
+    <div class="cat-list" id="catList"></div>
+    <div style="margin-top:18px">
+      <label>Add new category</label>
+      <div class="add-cat-row">
+        <input id="newCatName" type="text" placeholder="e.g. Lawn Equipment">
+        <button class="add-cat-btn" onclick="addCat()">Add</button>
+      </div>
+      <label style="margin-top:14px">Pick a color</label>
+      <div class="color-grid" id="colorGrid"></div>
+    </div>
+    <button class="bc" style="width:100%;margin-top:18px" onclick="closeCats()">Done</button>
+  </div>
+</div>
+
+<script>
+var K='inv_v5', KC='cats_v2', sp=['F1','F2'], cf='all', nid=34, editId=null;
+var selColor='#1e3a5f', newCatColor='#1e3a5f';
+
+var COLORS=['#1e3a5f','#1e4d2b','#4a1d6e','#991b1b','#92400e','#064e3b','#1e40af','#be185d','#0f766e','#b45309','#374151','#dc2626'];
+
+var DEFAULT_CATS=[
+  {id:'chainsaws',name:'Chainsaws',color:'#1e3a5f'},
+  {id:'machines',name:'Machines',color:'#1e4d2b'},
+  {id:'misc',name:'Miscellaneous',color:'#4a1d6e'}
+];
+
+var D=[
+  {id:1,n:"036 Pro",p:"$450",c:"chainsaws",pl:["F1","F2"],s:false},
+  {id:2,n:"010 AV",p:"$200",c:"chainsaws",pl:["F1","F2"],s:false},
+  {id:3,n:"009",p:"$200",c:"chainsaws",pl:["F1","F2","CL"],s:false},
+  {id:4,n:"075 AV",p:"$800",c:"chainsaws",pl:["F1","F2","CL"],s:false},
+  {id:5,n:"CS2171",p:"$950",c:"chainsaws",pl:["F1","F2","CL"],s:false},
+  {id:6,n:"Super Wiz",p:"$600",c:"chainsaws",pl:["F1","F2","CL"],s:false},
+  {id:7,n:"DCS6000",p:"$400",c:"chainsaws",pl:["F1","F2","CL"],s:false},
+  {id:8,n:"031 AV",p:"$300",c:"chainsaws",pl:["F1","F2"],s:false},
+  {id:9,n:"MS261",p:"$500",c:"chainsaws",pl:["F1","F2"],s:false},
+  {id:10,n:"MS260",p:"$900",c:"chainsaws",pl:["F1","CL"],s:false},
+  {id:11,n:"PB8010-2",p:"$450",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:12,n:"PB9010-3",p:"$450",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:13,n:"BC22605",p:"$250",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:14,n:"EB28350",p:"$425",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:15,n:"Craftsman Mower",p:"$200",c:"machines",pl:["F1","F2"],s:false},
+  {id:16,n:"Stihl Hedge Trimmer",p:"$325",c:"machines",pl:["F1","F2"],s:false},
+  {id:17,n:"SRM2100",p:"$150",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:18,n:"Toro Recycler 1",p:"$300",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:19,n:"Toro Recycler 2",p:"$300",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:20,n:"Craftsman Edger",p:"$150",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:21,n:"BG55",p:"$125",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:22,n:"Coleman 6250",p:"$275",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:23,n:"Total Power 2400",p:"$75",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:24,n:"Dayton 2in Pump",p:"$250",c:"machines",pl:["F1","CL"],s:false},
+  {id:25,n:"EBS000x",p:"$800",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:26,n:"Dayton 3in Pump",p:"$450",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:27,n:"Mantis Tiller",p:"$175",c:"machines",pl:["F1","F2"],s:false},
+  {id:28,n:"Husqvarna 125B",p:"$100",c:"machines",pl:["F1","F2"],s:false},
+  {id:29,n:"PPU DYF",p:"$150",c:"misc",pl:["F2","CL"],s:false},
+  {id:30,n:"Cutters Edge Bar",p:"$150",c:"misc",pl:["F2","CL"],s:false},
+  {id:31,n:"Parts Engines",p:"$75",c:"misc",pl:["F2","CL"],s:false},
+  {id:32,n:"GX240 Engine",p:"$275",c:"misc",pl:["F1","F2"],s:false},
+  {id:33,n:"2007 Accarel",p:"TBD",c:"misc",pl:["F1"],s:false}
+];
+
+var rawInv=localStorage.getItem(K);
+var inv=rawInv?JSON.parse(rawInv):D;
+if(!rawInv)localStorage.setItem(K,JSON.stringify(D));
+
+var rawCats=localStorage.getItem(KC);
+var cats=rawCats?JSON.parse(rawCats):DEFAULT_CATS;
+if(!rawCats)localStorage.setItem(KC,JSON.stringify(DEFAULT_CATS));
+
+nid=Math.max.apply(null,inv.map(function(i){return i.id;}))+1;
+
+function sv(){localStorage.setItem(K,JSON.stringify(inv));}
+function svc(){localStorage.setItem(KC,JSON.stringify(cats));}
+
+function flt(f,b){
+  cf=f;
+  document.querySelectorAll('.ft').forEach(function(x){x.classList.remove('on');});
+  if(b)b.classList.add('on');
+  render();
+}
+
+function togS(id){var i=inv.filter(function(x){return x.id===id;})[0];if(i){i.s=!i.s;sv();render();}}
+function del(id){if(confirm('Remove this item?')){inv=inv.filter(function(x){return x.id!==id;});sv();render();}}
+
+function populateCatSelect(){
+  var sel=document.getElementById('iC');
+  sel.innerHTML='';
+  cats.forEach(function(cat){
+    var o=document.createElement('option');
+    o.value=cat.id;o.textContent=cat.name;
+    sel.appendChild(o);
+  });
+}
+
+function opn(){
+  editId=null;
+  document.getElementById('modTitle').textContent='Add new item';
+  document.getElementById('saveBtn').textContent='Add item';
+  document.getElementById('iN').value='';
+  document.getElementById('iP').value='';
+  populateCatSelect();
+  sp=['F1','F2'];upP();
+  document.getElementById('ov').classList.add('open');
+}
+
+function edt(id){
+  var item=inv.filter(function(x){return x.id===id;})[0];
+  if(!item)return;
+  editId=id;
+  document.getElementById('modTitle').textContent='Edit item';
+  document.getElementById('saveBtn').textContent='Save changes';
+  document.getElementById('iN').value=item.n;
+  document.getElementById('iP').value=item.p;
+  populateCatSelect();
+  document.getElementById('iC').value=item.c;
+  sp=item.pl.slice();upP();
+  document.getElementById('ov').classList.add('open');
+}
+
+function cls(){document.getElementById('ov').classList.remove('open');editId=null;}
+function bgc(e){if(e.target===document.getElementById('ov'))cls();}
+function tp(p){var i=sp.indexOf(p);if(i>=0)sp.splice(i,1);else sp.push(p);upP();}
+function upP(){
+  document.getElementById('pF1').className='po'+(sp.indexOf('F1')>=0?' pf1':'');
+  document.getElementById('pF2').className='po'+(sp.indexOf('F2')>=0?' pf2':'');
+  document.getElementById('pCL').className='po'+(sp.indexOf('CL')>=0?' pcl':'');
+}
+
+function svi(){
+  var n=document.getElementById('iN').value.trim();
+  if(!n){document.getElementById('iN').focus();return;}
+  var p=document.getElementById('iP').value.trim()||'TBD';
+  var c=document.getElementById('iC').value;
+  if(editId!==null){
+    var item=inv.filter(function(x){return x.id===editId;})[0];
+    if(item){item.n=n;item.p=p;item.c=c;item.pl=sp.slice();}
+  } else {
+    inv.push({id:nid++,n:n,p:p,c:c,pl:sp.slice(),s:false});
+  }
+  sv();cls();render();
+}
+
+// Categories modal
+function openCats(){
+  renderCatList();
+  renderColorGrid();
+  document.getElementById('ovCat').classList.add('open');
+}
+function closeCats(){document.getElementById('ovCat').classList.remove('open');renderTabs();render();}
+function bgcCat(e){if(e.target===document.getElementById('ovCat'))closeCats();}
+
+function renderColorGrid(){
+  var g=document.getElementById('colorGrid');
+  g.innerHTML='';
+  COLORS.forEach(function(col){
+    var d=document.createElement('div');
+    d.className='color-opt'+(newCatColor===col?' sel':'');
+    d.style.background=col;
+    d.onclick=function(){newCatColor=col;renderColorGrid();};
+    g.appendChild(d);
+  });
+}
+
+function renderCatList(){
+  var el=document.getElementById('catList');
+  el.innerHTML='';
+  cats.forEach(function(cat){
+    var count=inv.filter(function(i){return i.c===cat.id;}).length;
+    var row=document.createElement('div');
+    row.className='cat-row';
+    row.innerHTML='<div class="cat-color" style="background:'+cat.color+'"></div>'+
+      '<span class="cat-name">'+cat.name+'</span>'+
+      '<span class="cat-count">'+count+' items</span>'+
+      (cats.length>1?'<button class="cat-del" onclick="delCat(\''+cat.id+'\')">🗑</button>':'');
+    el.appendChild(row);
+  });
+}
+
+function addCat(){
+  var name=document.getElementById('newCatName').value.trim();
+  if(!name)return;
+  var id='cat_'+Date.now();
+  cats.push({id:id,name:name,color:newCatColor});
+  svc();
+  document.getElementById('newCatName').value='';
+  renderCatList();
+}
+
+function delCat(id){
+  var count=inv.filter(function(i){return i.c===id;}).length;
+  if(count>0){
+    if(!confirm('This category has '+count+' items. They will be moved to "'+cats[0].name+'". Continue?'))return;
+    inv.forEach(function(i){if(i.c===id)i.c=cats[0].id;});
+    sv();
+  }
+  cats=cats.filter(function(c){return c.id!==id;});
+  svc();
+  if(cf===id)cf='all';
+  renderCatList();
+}
+
+function renderTabs(){
+  var el=document.getElementById('ftabs');
+  var tabs=[{id:'all',name:'All'},{id:'available',name:'Available'},{id:'sold',name:'Sold'}];
+  cats.forEach(function(c){tabs.push({id:c.id,name:c.name});});
+  el.innerHTML='';
+  tabs.forEach(function(t){
+    var b=document.createElement('button');
+    b.className='ft'+(cf===t.id?' on':'');
+    b.textContent=t.name;
+    b.onclick=function(){flt(t.id,b);};
+    el.appendChild(b);
+  });
+}
+
+function render(){
+  var t=inv.length,s=inv.filter(function(i){return i.s;}).length,a=t-s;
+  document.getElementById('nt').textContent=t;
+  document.getElementById('na').textContent=a;
+  document.getElementById('ns').textContent=s;
+
+  var fil=inv;
+  if(cf==='available')fil=inv.filter(function(i){return!i.s;});
+  else if(cf==='sold')fil=inv.filter(function(i){return i.s;});
+  else{
+    var catIds=cats.map(function(c){return c.id;});
+    if(catIds.indexOf(cf)>=0)fil=inv.filter(function(i){return i.c===cf;});
+  }
+
+  var secs=cats;
+  if(cf==='available'||cf==='sold'||cf==='all'){
+    // show all cats that have items
+  } else {
+    secs=cats.filter(function(c){return c.id===cf;});
+  }
+
+  var h='';
+  secs.forEach(function(sec){
+    var items=fil.filter(function(i){return i.c===sec.id;});
+    if(!items.length)return;
+    h+='<div class="sec"><div class="shd" style="background:'+sec.color+'">'+
+       '<div class="shd-left"><span>'+sec.name+'</span></div>'+
+       '<span style="font-size:11px;opacity:0.75">'+items.length+' items</span></div>';
+    items.forEach(function(item){
+      var bgs=item.pl.map(function(p){
+        return p==='F1'?'<span class="bg f1">FB 1</span>':
+               p==='F2'?'<span class="bg f2">FB 2</span>':
+               '<span class="bg cl">Craigslist</span>';
+      }).join('');
+      if(item.s)bgs+='<span class="bg sd">Sold</span>';
+      h+='<div class="card'+(item.s?' sold':'')+'">'+
+         '<div class="ci"><div class="cn">'+item.n+'</div>'+
+         '<div class="cp">'+item.p+'</div>'+
+         '<div class="bgs">'+bgs+'</div></div>'+
+         '<div class="ca">'+
+         '<button class="bs'+(item.s?' on':'')+'" onclick="togS('+item.id+')">'+(item.s?'✓ Sold':'Mark sold')+'</button>'+
+         '<div style="display:flex;gap:6px">'+
+         '<button class="icon-btn" onclick="edt('+item.id+')">✏️</button>'+
+         '<button class="icon-btn" onclick="del('+item.id+')">🗑</button>'+
+         '</div></div></div>';
+    });
+    h+='</div>';
+  });
+  document.getElementById('lst').innerHTML=h||'<div class="empty">No items to show</div>';
+}
+
+renderTabs();
+render();
+</script>
+</body></html>

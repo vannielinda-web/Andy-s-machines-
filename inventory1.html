@@ -6,6 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Inventory">
 <title>Equipment Inventory</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,sans-serif;background:#f0f4f8;padding-bottom:90px}
@@ -13,6 +15,10 @@ body{font-family:-apple-system,sans-serif;background:#f0f4f8;padding-bottom:90px
 .hdr-left h1{font-size:17px;font-weight:700}
 .hdr-left p{font-size:11px;opacity:0.6;margin-top:1px}
 .hdr-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:12px;font-weight:600;padding:7px 11px;border-radius:8px;cursor:pointer}
+.sync{text-align:center;padding:8px;font-size:13px;font-weight:600}
+.sync.saving{background:#fef9c3;color:#854d0e}
+.sync.saved{background:#dcfce7;color:#166534}
+.sync.error{background:#fee2e2;color:#991b1b}
 .sbar{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border-bottom:1px solid #e2e8f0;padding:8px 0}
 .st{text-align:center}
 .sn{font-size:20px;font-weight:700;color:#1e3a5f}
@@ -24,9 +30,7 @@ body{font-family:-apple-system,sans-serif;background:#f0f4f8;padding-bottom:90px
 .ft.on{color:#1e3a5f;border-bottom-color:#1e3a5f}
 .sec{margin:10px 12px 0}
 .shd{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;border-radius:9px;margin-bottom:6px}
-.shd-left{display:flex;align-items:center;gap:8px}
 .shd span{font-size:13px;font-weight:600;color:#fff}
-.shd-edit{background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:11px;padding:3px 8px;border-radius:6px;cursor:pointer}
 .card{background:#fff;border-radius:11px;padding:11px 12px;margin-bottom:6px;display:flex;align-items:center;gap:9px;box-shadow:0 1px 3px rgba(0,0,0,0.07)}
 .card.sold{opacity:0.5}
 .ci{flex:1;min-width:0}
@@ -44,6 +48,7 @@ body{font-family:-apple-system,sans-serif;background:#f0f4f8;padding-bottom:90px
 .bs.on{background:#dcfce7;border-color:#86efac;color:#166534}
 .icon-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:3px;color:#94a3b8}
 .empty{text-align:center;padding:40px;color:#94a3b8;font-size:14px}
+.loading{text-align:center;padding:40px;color:#64748b;font-size:14px}
 .fab{position:fixed;bottom:26px;right:18px;width:56px;height:56px;border-radius:50%;background:#1e3a5f;color:#fff;font-size:28px;border:none;box-shadow:0 4px 14px rgba(30,58,95,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:200}
 .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;align-items:flex-end}
 .ov.open{display:flex}
@@ -72,31 +77,29 @@ body{font-family:-apple-system,sans-serif;background:#f0f4f8;padding-bottom:90px
 .add-cat-row{display:flex;gap:8px;margin-top:10px}
 .add-cat-row input{flex:1;padding:10px;font-size:14px;border:1.5px solid #e2e8f0;border-radius:9px;background:#f8fafc;color:#1a202c;outline:none}
 .add-cat-btn{padding:10px 16px;border-radius:9px;border:none;background:#1e3a5f;color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
-.danger-btn{width:100%;margin-top:10px;padding:11px;border-radius:9px;border:1.5px solid #fca5a5;background:#fff;color:#991b1b;font-size:14px;font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
 <div class="hdr">
-  <div class="hdr-left"><h1>⚙️ Equipment Inventory</h1><p>Tap + to add · ✏️ to edit</p></div>
+  <div class="hdr-left"><h1>⚙️ Andy's Inventory</h1><p>Tap + to add · ✏️ to edit</p></div>
   <button class="hdr-btn" onclick="openCats()">📂 Categories</button>
 </div>
+<div class="sync" id="sync">☁️ Connecting to cloud...</div>
 <div class="sbar">
   <div class="st"><div class="sn" id="nt">0</div><div class="sl">Total</div></div>
   <div class="st"><div class="sn g" id="na">0</div><div class="sl">Available</div></div>
   <div class="st"><div class="sn r" id="ns">0</div><div class="sl">Sold</div></div>
 </div>
 <div class="ftabs" id="ftabs"></div>
-<div id="lst"></div>
+<div id="lst"><div class="loading">☁️ Loading inventory...</div></div>
 <button class="fab" onclick="opn()">+</button>
 
-<!-- Item modal -->
 <div class="ov" id="ov" onclick="bgc(event)">
   <div class="mod">
     <h2 id="modTitle">Add new item</h2>
     <label>Name</label><input id="iN" type="text" placeholder="e.g. Stihl MS271">
     <label>Price</label><input id="iP" type="text" placeholder="e.g. $350">
-    <label>Category</label>
-    <select id="iC"></select>
+    <label>Category</label><select id="iC"></select>
     <label>Post on</label>
     <div class="pg">
       <div id="pF1" class="po pf1" onclick="tp('F1')">Facebook 1</div>
@@ -110,7 +113,6 @@ body{font-family:-apple-system,sans-serif;background:#f0f4f8;padding-bottom:90px
   </div>
 </div>
 
-<!-- Categories modal -->
 <div class="ov" id="ovCat" onclick="bgcCat(event)">
   <div class="mod">
     <h2>📂 Manage Categories</h2>
@@ -129,9 +131,20 @@ body{font-family:-apple-system,sans-serif;background:#f0f4f8;padding-bottom:90px
 </div>
 
 <script>
-var K='inv_v5', KC='cats_v2', sp=['F1','F2'], cf='all', nid=34, editId=null;
-var selColor='#1e3a5f', newCatColor='#1e3a5f';
+var firebaseConfig = {
+  apiKey: "AIzaSyA9S6Fs7TeAvJnMXGCjY6y8MZC9fCKXXpw",
+  authDomain: "andys-inventory.firebaseapp.com",
+  projectId: "andys-inventory",
+  storageBucket: "andys-inventory.firebasestorage.app",
+  messagingSenderId: "944013049347",
+  appId: "1:944013049347:web:0605171960c47dcc1b1836"
+};
 
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+
+var sp=['F1','F2'], cf='all', editId=null, newCatColor='#1e3a5f';
+var inv=[], cats=[];
 var COLORS=['#1e3a5f','#1e4d2b','#4a1d6e','#991b1b','#92400e','#064e3b','#1e40af','#be185d','#0f766e','#b45309','#374151','#dc2626'];
 
 var DEFAULT_CATS=[
@@ -140,73 +153,119 @@ var DEFAULT_CATS=[
   {id:'misc',name:'Miscellaneous',color:'#4a1d6e'}
 ];
 
-var D=[
-  {id:1,n:"036 Pro",p:"$450",c:"chainsaws",pl:["F1","F2"],s:false},
-  {id:2,n:"010 AV",p:"$200",c:"chainsaws",pl:["F1","F2"],s:false},
-  {id:3,n:"009",p:"$200",c:"chainsaws",pl:["F1","F2","CL"],s:false},
-  {id:4,n:"075 AV",p:"$800",c:"chainsaws",pl:["F1","F2","CL"],s:false},
-  {id:5,n:"CS2171",p:"$950",c:"chainsaws",pl:["F1","F2","CL"],s:false},
-  {id:6,n:"Super Wiz",p:"$600",c:"chainsaws",pl:["F1","F2","CL"],s:false},
-  {id:7,n:"DCS6000",p:"$400",c:"chainsaws",pl:["F1","F2","CL"],s:false},
-  {id:8,n:"031 AV",p:"$300",c:"chainsaws",pl:["F1","F2"],s:false},
-  {id:9,n:"MS261",p:"$500",c:"chainsaws",pl:["F1","F2"],s:false},
-  {id:10,n:"MS260",p:"$900",c:"chainsaws",pl:["F1","CL"],s:false},
-  {id:11,n:"PB8010-2",p:"$450",c:"machines",pl:["F1","F2","CL"],s:false},
-  {id:12,n:"PB9010-3",p:"$450",c:"machines",pl:["F1","F2","CL"],s:false},
-  {id:13,n:"BC22605",p:"$250",c:"machines",pl:["F1","F2","CL"],s:false},
-  {id:14,n:"EB28350",p:"$425",c:"machines",pl:["F1","F2","CL"],s:false},
-  {id:15,n:"Craftsman Mower",p:"$200",c:"machines",pl:["F1","F2"],s:false},
-  {id:16,n:"Stihl Hedge Trimmer",p:"$325",c:"machines",pl:["F1","F2"],s:false},
-  {id:17,n:"SRM2100",p:"$150",c:"machines",pl:["F1","F2","CL"],s:false},
-  {id:18,n:"Toro Recycler 1",p:"$300",c:"machines",pl:["F1","F2","CL"],s:false},
-  {id:19,n:"Toro Recycler 2",p:"$300",c:"machines",pl:["F1","F2","CL"],s:false},
-  {id:20,n:"Craftsman Edger",p:"$150",c:"machines",pl:["F1","F2","CL"],s:false},
-  {id:21,n:"BG55",p:"$125",c:"machines",pl:["F1","F2","CL"],s:false},
-  {id:22,n:"Coleman 6250",p:"$275",c:"machines",pl:["F1","F2","CL"],s:false},
-  {id:23,n:"Total Power 2400",p:"$75",c:"machines",pl:["F1","F2","CL"],s:false},
-  {id:24,n:"Dayton 2in Pump",p:"$250",c:"machines",pl:["F1","CL"],s:false},
-  {id:25,n:"EBS000x",p:"$800",c:"machines",pl:["F1","F2","CL"],s:false},
-  {id:26,n:"Dayton 3in Pump",p:"$450",c:"machines",pl:["F1","F2","CL"],s:false},
-  {id:27,n:"Mantis Tiller",p:"$175",c:"machines",pl:["F1","F2"],s:false},
-  {id:28,n:"Husqvarna 125B",p:"$100",c:"machines",pl:["F1","F2"],s:false},
-  {id:29,n:"PPU DYF",p:"$150",c:"misc",pl:["F2","CL"],s:false},
-  {id:30,n:"Cutters Edge Bar",p:"$150",c:"misc",pl:["F2","CL"],s:false},
-  {id:31,n:"Parts Engines",p:"$75",c:"misc",pl:["F2","CL"],s:false},
-  {id:32,n:"GX240 Engine",p:"$275",c:"misc",pl:["F1","F2"],s:false},
-  {id:33,n:"2007 Accarel",p:"TBD",c:"misc",pl:["F1"],s:false}
+var DEFAULT_INV=[
+  {id:'1',n:"036 Pro",p:"$450",c:"chainsaws",pl:["F1","F2"],s:false},
+  {id:'2',n:"010 AV",p:"$200",c:"chainsaws",pl:["F1","F2"],s:false},
+  {id:'3',n:"009",p:"$200",c:"chainsaws",pl:["F1","F2","CL"],s:false},
+  {id:'4',n:"075 AV",p:"$800",c:"chainsaws",pl:["F1","F2","CL"],s:false},
+  {id:'5',n:"CS2171",p:"$950",c:"chainsaws",pl:["F1","F2","CL"],s:false},
+  {id:'6',n:"Super Wiz",p:"$600",c:"chainsaws",pl:["F1","F2","CL"],s:false},
+  {id:'7',n:"DCS6000",p:"$400",c:"chainsaws",pl:["F1","F2","CL"],s:false},
+  {id:'8',n:"031 AV",p:"$300",c:"chainsaws",pl:["F1","F2"],s:false},
+  {id:'9',n:"MS261",p:"$500",c:"chainsaws",pl:["F1","F2"],s:false},
+  {id:'10',n:"MS260",p:"$900",c:"chainsaws",pl:["F1","CL"],s:false},
+  {id:'11',n:"PB8010-2",p:"$450",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:'12',n:"PB9010-3",p:"$450",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:'13',n:"BC22605",p:"$250",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:'14',n:"EB28350",p:"$425",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:'15',n:"Craftsman Mower",p:"$200",c:"machines",pl:["F1","F2"],s:false},
+  {id:'16',n:"Stihl Hedge Trimmer",p:"$325",c:"machines",pl:["F1","F2"],s:false},
+  {id:'17',n:"SRM2100",p:"$150",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:'18',n:"Toro Recycler 1",p:"$300",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:'19',n:"Toro Recycler 2",p:"$300",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:'20',n:"Craftsman Edger",p:"$150",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:'21',n:"BG55",p:"$125",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:'22',n:"Coleman 6250",p:"$275",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:'23',n:"Total Power 2400",p:"$75",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:'24',n:"Dayton 2in Pump",p:"$250",c:"machines",pl:["F1","CL"],s:false},
+  {id:'25',n:"EBS000x",p:"$800",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:'26',n:"Dayton 3in Pump",p:"$450",c:"machines",pl:["F1","F2","CL"],s:false},
+  {id:'27',n:"Mantis Tiller",p:"$175",c:"machines",pl:["F1","F2"],s:false},
+  {id:'28',n:"Husqvarna 125B",p:"$100",c:"machines",pl:["F1","F2"],s:false},
+  {id:'29',n:"PPU DYF",p:"$150",c:"misc",pl:["F2","CL"],s:false},
+  {id:'30',n:"Cutters Edge Bar",p:"$150",c:"misc",pl:["F2","CL"],s:false},
+  {id:'31',n:"Parts Engines",p:"$75",c:"misc",pl:["F2","CL"],s:false},
+  {id:'32',n:"GX240 Engine",p:"$275",c:"misc",pl:["F1","F2"],s:false},
+  {id:'33',n:"2007 Accarel",p:"TBD",c:"misc",pl:["F1"],s:false}
 ];
 
-var rawInv=localStorage.getItem(K);
-var inv=rawInv?JSON.parse(rawInv):D;
-if(!rawInv)localStorage.setItem(K,JSON.stringify(D));
+function showSync(msg, type){
+  var el=document.getElementById('sync');
+  el.textContent=msg;
+  el.className='sync '+type;
+  if(type==='saved')setTimeout(function(){el.textContent='✅ Cloud connected';el.className='sync saved';},2000);
+}
 
-var rawCats=localStorage.getItem(KC);
-var cats=rawCats?JSON.parse(rawCats):DEFAULT_CATS;
-if(!rawCats)localStorage.setItem(KC,JSON.stringify(DEFAULT_CATS));
+function loadData(){
+  showSync('☁️ Connecting...','saving');
+  db.collection('categories').get().then(function(snap){
+    if(snap.empty){
+      seedData();
+    } else {
+      cats=[];
+      snap.forEach(function(doc){
+        cats.push({id:doc.id,name:doc.data().name,color:doc.data().color,order:doc.data().order||0});
+      });
+      cats.sort(function(a,b){return a.order-b.order;});
+      loadInventory();
+    }
+  }).catch(function(e){
+    showSync('⚠️ Error: '+e.message,'error');
+  });
+}
 
-nid=Math.max.apply(null,inv.map(function(i){return i.id;}))+1;
+function seedData(){
+  showSync('☁️ Setting up...','saving');
+  var batch=db.batch();
+  DEFAULT_CATS.forEach(function(cat,i){
+    batch.set(db.collection('categories').doc(cat.id),{name:cat.name,color:cat.color,order:i});
+  });
+  DEFAULT_INV.forEach(function(item){
+    batch.set(db.collection('inventory').doc(item.id),{n:item.n,p:item.p,c:item.c,pl:item.pl,s:item.s,order:parseInt(item.id)});
+  });
+  batch.commit().then(function(){
+    cats=DEFAULT_CATS.slice();
+    inv=DEFAULT_INV.slice();
+    showSync('✅ Cloud connected!','saved');
+    renderTabs(); render();
+  }).catch(function(e){
+    showSync('⚠️ Setup error: '+e.message,'error');
+  });
+}
 
-function sv(){localStorage.setItem(K,JSON.stringify(inv));}
-function svc(){localStorage.setItem(KC,JSON.stringify(cats));}
+function loadInventory(){
+  db.collection('inventory').orderBy('order').get().then(function(snap){
+    inv=[];
+    snap.forEach(function(doc){
+      var d=doc.data();
+      inv.push({id:doc.id,n:d.n,p:d.p,c:d.c,pl:d.pl||[],s:d.s||false});
+    });
+    showSync('✅ Cloud connected!','saved');
+    renderTabs(); render();
+  }).catch(function(e){
+    showSync('⚠️ Load error: '+e.message,'error');
+  });
+}
 
-function flt(f,b){
-  cf=f;
-  document.querySelectorAll('.ft').forEach(function(x){x.classList.remove('on');});
-  if(b)b.classList.add('on');
+function togS(id){
+  var item=inv.filter(function(x){return x.id===id;})[0];
+  if(!item)return;
+  item.s=!item.s;
+  showSync('☁️ Saving...','saving');
+  db.collection('inventory').doc(id).update({s:item.s}).then(function(){
+    showSync('✅ Saved!','saved');
+  }).catch(function(e){showSync('⚠️ Error: '+e.message,'error');});
   render();
 }
 
-function togS(id){var i=inv.filter(function(x){return x.id===id;})[0];if(i){i.s=!i.s;sv();render();}}
-function del(id){if(confirm('Remove this item?')){inv=inv.filter(function(x){return x.id!==id;});sv();render();}}
-
-function populateCatSelect(){
-  var sel=document.getElementById('iC');
-  sel.innerHTML='';
-  cats.forEach(function(cat){
-    var o=document.createElement('option');
-    o.value=cat.id;o.textContent=cat.name;
-    sel.appendChild(o);
-  });
+function del(id){
+  if(!confirm('Remove this item?'))return;
+  inv=inv.filter(function(x){return x.id!==id;});
+  showSync('☁️ Saving...','saving');
+  db.collection('inventory').doc(id).delete().then(function(){
+    showSync('✅ Saved!','saved');
+  }).catch(function(e){showSync('⚠️ Error: '+e.message,'error');});
+  render();
 }
 
 function opn(){
@@ -243,26 +302,40 @@ function upP(){
   document.getElementById('pCL').className='po'+(sp.indexOf('CL')>=0?' pcl':'');
 }
 
+function populateCatSelect(){
+  var sel=document.getElementById('iC');
+  sel.innerHTML='';
+  cats.forEach(function(cat){
+    var o=document.createElement('option');
+    o.value=cat.id; o.textContent=cat.name;
+    sel.appendChild(o);
+  });
+}
+
 function svi(){
   var n=document.getElementById('iN').value.trim();
   if(!n){document.getElementById('iN').focus();return;}
   var p=document.getElementById('iP').value.trim()||'TBD';
   var c=document.getElementById('iC').value;
+  showSync('☁️ Saving...','saving');
   if(editId!==null){
     var item=inv.filter(function(x){return x.id===editId;})[0];
     if(item){item.n=n;item.p=p;item.c=c;item.pl=sp.slice();}
+    db.collection('inventory').doc(editId).update({n:n,p:p,c:c,pl:sp.slice()}).then(function(){
+      showSync('✅ Saved!','saved');
+    }).catch(function(e){showSync('⚠️ Error: '+e.message,'error');});
   } else {
-    inv.push({id:nid++,n:n,p:p,c:c,pl:sp.slice(),s:false});
+    var newId='item_'+Date.now();
+    var newItem={id:newId,n:n,p:p,c:c,pl:sp.slice(),s:false};
+    inv.push(newItem);
+    db.collection('inventory').doc(newId).set({n:n,p:p,c:c,pl:sp.slice(),s:false,order:Date.now()}).then(function(){
+      showSync('✅ Saved!','saved');
+    }).catch(function(e){showSync('⚠️ Error: '+e.message,'error');});
   }
-  sv();cls();render();
+  cls();render();
 }
 
-// Categories modal
-function openCats(){
-  renderCatList();
-  renderColorGrid();
-  document.getElementById('ovCat').classList.add('open');
-}
+function openCats(){renderCatList();renderColorGrid();document.getElementById('ovCat').classList.add('open');}
 function closeCats(){document.getElementById('ovCat').classList.remove('open');renderTabs();render();}
 function bgcCat(e){if(e.target===document.getElementById('ovCat'))closeCats();}
 
@@ -297,8 +370,12 @@ function addCat(){
   var name=document.getElementById('newCatName').value.trim();
   if(!name)return;
   var id='cat_'+Date.now();
-  cats.push({id:id,name:name,color:newCatColor});
-  svc();
+  var cat={id:id,name:name,color:newCatColor,order:Date.now()};
+  cats.push(cat);
+  showSync('☁️ Saving...','saving');
+  db.collection('categories').doc(id).set({name:name,color:newCatColor,order:Date.now()}).then(function(){
+    showSync('✅ Saved!','saved');
+  }).catch(function(e){showSync('⚠️ Error: '+e.message,'error');});
   document.getElementById('newCatName').value='';
   renderCatList();
 }
@@ -307,13 +384,23 @@ function delCat(id){
   var count=inv.filter(function(i){return i.c===id;}).length;
   if(count>0){
     if(!confirm('This category has '+count+' items. They will be moved to "'+cats[0].name+'". Continue?'))return;
-    inv.forEach(function(i){if(i.c===id)i.c=cats[0].id;});
-    sv();
+    var batch=db.batch();
+    inv.forEach(function(i){
+      if(i.c===id){i.c=cats[0].id;batch.update(db.collection('inventory').doc(i.id),{c:cats[0].id});}
+    });
+    batch.commit();
   }
   cats=cats.filter(function(c){return c.id!==id;});
-  svc();
+  db.collection('categories').doc(id).delete();
   if(cf===id)cf='all';
   renderCatList();
+}
+
+function flt(f,b){
+  cf=f;
+  document.querySelectorAll('.ft').forEach(function(x){x.classList.remove('on');});
+  if(b)b.classList.add('on');
+  render();
 }
 
 function renderTabs(){
@@ -335,53 +422,28 @@ function render(){
   document.getElementById('nt').textContent=t;
   document.getElementById('na').textContent=a;
   document.getElementById('ns').textContent=s;
-
   var fil=inv;
   if(cf==='available')fil=inv.filter(function(i){return!i.s;});
   else if(cf==='sold')fil=inv.filter(function(i){return i.s;});
-  else{
-    var catIds=cats.map(function(c){return c.id;});
-    if(catIds.indexOf(cf)>=0)fil=inv.filter(function(i){return i.c===cf;});
-  }
-
-  var secs=cats;
-  if(cf==='available'||cf==='sold'||cf==='all'){
-    // show all cats that have items
-  } else {
-    secs=cats.filter(function(c){return c.id===cf;});
-  }
-
+  else{var cids=cats.map(function(c){return c.id;});if(cids.indexOf(cf)>=0)fil=inv.filter(function(i){return i.c===cf;});}
+  var secs=(cf==='available'||cf==='sold'||cf==='all')?cats:cats.filter(function(c){return c.id===cf;});
   var h='';
   secs.forEach(function(sec){
     var items=fil.filter(function(i){return i.c===sec.id;});
     if(!items.length)return;
-    h+='<div class="sec"><div class="shd" style="background:'+sec.color+'">'+
-       '<div class="shd-left"><span>'+sec.name+'</span></div>'+
-       '<span style="font-size:11px;opacity:0.75">'+items.length+' items</span></div>';
+    h+='<div class="sec"><div class="shd" style="background:'+sec.color+'"><span>'+sec.name+'</span><span style="font-size:11px;opacity:0.75">'+items.length+' items</span></div>';
     items.forEach(function(item){
       var bgs=item.pl.map(function(p){
-        return p==='F1'?'<span class="bg f1">FB 1</span>':
-               p==='F2'?'<span class="bg f2">FB 2</span>':
-               '<span class="bg cl">Craigslist</span>';
+        return p==='F1'?'<span class="bg f1">FB 1</span>':p==='F2'?'<span class="bg f2">FB 2</span>':'<span class="bg cl">Craigslist</span>';
       }).join('');
       if(item.s)bgs+='<span class="bg sd">Sold</span>';
-      h+='<div class="card'+(item.s?' sold':'')+'">'+
-         '<div class="ci"><div class="cn">'+item.n+'</div>'+
-         '<div class="cp">'+item.p+'</div>'+
-         '<div class="bgs">'+bgs+'</div></div>'+
-         '<div class="ca">'+
-         '<button class="bs'+(item.s?' on':'')+'" onclick="togS('+item.id+')">'+(item.s?'✓ Sold':'Mark sold')+'</button>'+
-         '<div style="display:flex;gap:6px">'+
-         '<button class="icon-btn" onclick="edt('+item.id+')">✏️</button>'+
-         '<button class="icon-btn" onclick="del('+item.id+')">🗑</button>'+
-         '</div></div></div>';
+      h+='<div class="card'+(item.s?' sold':'')+'"><div class="ci"><div class="cn">'+item.n+'</div><div class="cp">'+item.p+'</div><div class="bgs">'+bgs+'</div></div><div class="ca"><button class="bs'+(item.s?' on':'')+'" onclick="togS(\''+item.id+'\')">'+(item.s?'✓ Sold':'Mark sold')+'</button><div style="display:flex;gap:6px"><button class="icon-btn" onclick="edt(\''+item.id+'\')">✏️</button><button class="icon-btn" onclick="del(\''+item.id+'\')">🗑</button></div></div></div>';
     });
     h+='</div>';
   });
   document.getElementById('lst').innerHTML=h||'<div class="empty">No items to show</div>';
 }
 
-renderTabs();
-render();
+loadData();
 </script>
 </body></html>

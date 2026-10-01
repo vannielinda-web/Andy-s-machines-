@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Equipment Ledger">
+<meta name="theme-color" content="#F37021">
+<title>Equipment Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --green:#F37021; --orange:#F37021; --paper:#FFFFFF; --card:#FFFFFF;
+  --ink:#222222; --muted:#6E6E6E; --line:#E4E4E4; --gain:#2E7D4F; --loss:#B3261E;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px}
+body{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+
+header{background:var(--green);color:#fff;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 18px}
+.top{display:flex;justify-content:space-between;align-items:center}
+.title{font-family:var(--display);font-size:22px;font-weight:700;letter-spacing:.3px}
+.sync{font-size:12px;opacity:.9}
+.big{margin-top:14px}
+.big .num{font-family:var(--display);font-size:46px;font-weight:700;line-height:1}
+.big .lbl{font-size:13px;opacity:.9;margin-top:2px}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.row3 div{background:rgba(255,255,255,.2);border-radius:10px;padding:8px 10px}
+.row3 b{display:block;font-family:var(--display);font-size:20px;font-weight:600}
+.row3 span{font-size:12px;opacity:.9}
+
+.bar{position:sticky;top:0;z-index:5;background:var(--paper);padding:10px 12px 6px;border-bottom:1px solid var(--line)}
+.sw{position:relative}.sw svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--orange)}
+.search{width:100%;padding:11px 12px 11px 38px;border:1px solid var(--line);border-radius:10px;background:#F7F7F7}
+.chips{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding-bottom:4px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:14px;white-space:nowrap}
+.chip.on{background:var(--orange);color:#fff;border-color:var(--orange)}
+.chip.tool{border-style:dashed;color:var(--muted)}
+.status{display:flex;gap:6px;margin-top:6px}
+.status .chip{flex:1;text-align:center}
+
+.list{padding:10px 12px}
+.item{display:flex;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--line);box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:5px solid var(--orange);border-radius:10px;padding:12px;margin-bottom:8px;width:100%;text-align:left}
+.item.sold{border-left-color:var(--gain)}
+.item.lost{border-left-color:var(--loss)}
+.item h3{font-family:var(--display);font-size:20px;font-weight:600;line-height:1.1}
+.meta{font-size:13px;color:var(--muted);margin-top:3px}
+.money{text-align:right;flex-shrink:0}
+.money .p{font-family:var(--display);font-size:24px;font-weight:700}
+.money .s{font-size:12px;color:var(--muted)}
+.gain{color:var(--gain)} .loss{color:var(--loss)}
+.group{font-family:var(--display);font-size:18px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.5px;margin:14px 2px 6px;display:flex;justify-content:space-between}.group span{color:var(--muted);font-size:14px}
+.group:first-child{margin-top:4px}
+.mv{border:1px solid var(--line);background:#fff;border-radius:8px;width:34px;height:34px;font-size:16px}.mv:disabled{opacity:.3}
+.empty{text-align:center;color:var(--muted);padding:40px 20px}
+
+.fab{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));background:var(--orange);color:#fff;border:none;border-radius:12px;padding:15px;font-family:var(--display);font-size:20px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:20;align-items:flex-end;justify-content:center}
+.sheet-bg.open{display:flex}
+.sheet{background:#F7F7F7;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+.sheet h2{font-family:var(--display);font-size:24px;margin-bottom:12px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+.field{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:16px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.calc{margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center}
+.calc .p{font-family:var(--display);font-size:28px;font-weight:700}
+.btns{display:flex;gap:8px;margin-top:16px}
+.btn{flex:1;padding:13px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:600}
+.btn.main{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.del{color:var(--loss);border-color:#E7C3BF}
+.catrow{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px}
+.catrow input{flex:1;border:none;padding:6px;font-size:16px;background:transparent}
+.x{border:none;background:none;color:var(--loss);font-size:14px;font-weight:600;padding:6px}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;z-index:30;pointer-events:none}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="top">
+    <div class="title">Equipment Ledger</div>
+    <div class="sync" id="sync">Connecting…</div>
+  </div>
+  <div class="big">
+    <div class="num" id="tProfit">$0</div>
+    <div class="lbl">Total profit on sold machines</div>
+  </div>
+  <div class="row3">
+    <div><b id="tSold">0</b><span>Sold</span></div>
+    <div><b id="tStock">0</b><span>Unsold</span></div>
+    <div><b id="tInvested">$0</b><span>Current inventory cost</span></div>
+  </div>
+</header>
+
+<div class="bar">
+  <div class="sw"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><input class="search" id="q" type="search" placeholder="Search brand, model, origin…" aria-label="Search"></div>
+  <div class="chips" id="cats"></div>
+  <div class="status" id="statusChips">
+    <button class="chip on" data-s="all">All</button>
+    <button class="chip" data-s="stock">Unsold</button>
+    <button class="chip" data-s="sold">Sold</button>
+  </div>
+</div>
+
+<div class="list" id="list"></div>
+
+<button class="fab" id="addBtn">+ Add machine</button>
+
+<!-- Item sheet -->
+<div class="sheet-bg" id="itemBg">
+  <div class="sheet">
+    <h2 id="itemTitle">Add machine</h2>
+    <label for="fCat">Category</label>
+    <select class="field" id="fCat"></select>
+    <div class="two">
+      <div><label for="fBrand">Brand</label><input class="field" id="fBrand" list="brandList" autocomplete="off"></div>
+      <div><label for="fModel">Model</label><input class="field" id="fModel" list="modelList" autocomplete="off"></div>
+    </div>
+    <datalist id="brandList"></datalist>
+    <datalist id="modelList"></datalist>
+    <label for="fOrigin">Origin</label>
+    <input class="field" id="fOrigin" list="originList" autocomplete="off" placeholder="Facebook, auction, yard sale…">
+    <datalist id="originList"></datalist>
+    <div class="two">
+      <div><label for="fBuy">Purchase price ($)</label><input class="field" id="fBuy" type="number" inputmode="decimal" min="0" step="0.01"></div>
+      <div><label for="fParts">Parts expenditure ($)</label><input class="field" id="fParts" type="number" inputmode="decimal" min="0" step="0.01"></div>
+    </div>
+    <label for="fSale">Sale price ($)</label>
+    <input class="field" id="fSale" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Leave empty if not sold">
+    <div class="two">
+      <div><label for="fGot">Date acquired</label><input class="field" id="fGot" type="date"></div>
+      <div><label for="fSold">Date sold</label><input class="field" id="fSold" type="date"></div>
+    </div>
+    <label for="fNotes">Notes</label>
+    <input class="field" id="fNotes" autocomplete="off">
+    <div class="calc"><span>Total expenditure</span><span class="p" id="calcCost">$0</span></div>
+    <div class="calc" id="profitRow"><span>Profit</span><span class="p" id="calcVal">$0</span></div>
+    <div class="btns">
+      <button class="btn del" id="delBtn">Delete</button>
+      <button class="btn" id="cancelBtn">Cancel</button>
+      <button class="btn main" id="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Categories sheet -->
+<div class="sheet-bg" id="catBg">
+  <div class="sheet">
+    <h2>Categories</h2>
+    <div id="catEdit"></div>
+    <div class="catrow">
+      <input id="newCat" placeholder="New category name">
+      <button class="x" id="addCat" style="color:var(--green)">Add</button>
+    </div>
+    <div class="btns">
+      <button class="btn" id="exportBtn">Download spreadsheet</button>
+      <button class="btn main" id="catDone">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Same Firebase project as the inventory app, but separate collections,
+// so money data never mixes with the inventory list.
+var firebaseConfig = {
+  apiKey: "AIzaSyA9S6Fs7TeAvJnMXGCjY6y8MZC9fCKXXpw",
+  authDomain: "andys-inventory.firebaseapp.com",
+  projectId: "andys-inventory",
+  storageBucket: "andys-inventory.firebasestorage.app",
+  messagingSenderId: "944013049347",
+  appId: "1:944013049347:web:0605171960c47dcc1b1836"
+};
+if(typeof firebase==='undefined'){
+  document.addEventListener('DOMContentLoaded',function(){
+    document.getElementById('sync').textContent='⚠ Not connected';
+    document.getElementById('list').innerHTML='<div class="empty">Can’t reach the database. Check the internet connection and reload. (This also happens in the Claude preview, which blocks the database. It works from the GitHub link.)</div>';
+  });
+  throw new Error('Firebase did not load');
+}
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+try { db.enablePersistence({synchronizeTabs:true}).catch(function(){}); } catch(e){}
+var ITEMS = db.collection('money_items');
+var CATS  = db.collection('money_categories');
+
+// Brand and model presets. He can always type something not on the list,
+// and anything he types once shows up as a suggestion next time.
+var PRESETS = {
+  "Chainsaws": {
+    "Stihl":["MS 170","MS 180","MS 181","MS 211","MS 250","MS 261","MS 271","MS 291","MS 311","MS 362","MS 391","MS 400","MS 461","MS 500i","MS 661","026","036","044","046","066"],
+    "Husqvarna":["135","235","240","435","440","445","450","455 Rancher","460 Rancher","562XP","572XP","372XP","550XP","390XP","395XP"],
+    "Echo":["CS-271T","CS-310","CS-352","CS-400","CS-450","CS-490","CS-501P","CS-590 Timberwolf","CS-620P","CS-7310P"],
+    "Jonsered":["CS2240","CS2245","CS2252","CS2255","CS2260","2171"],
+    "Poulan":["P3314","P3816","Wild Thing","Pro 5020"],
+    "Dolmar":["PS-420","PS-5105","PS-6100"],
+    "Makita":["EA3500","EA4300","EA5100","XCU03"],
+    "Homelite":["Super XL","XL-12","Timberman"],
+    "McCulloch":["Pro Mac 610","Mini Mac"],
+    "Craftsman":["S165","S180"],
+    "Ryobi":[],"DeWalt":[],"Milwaukee":["M18 Fuel"]
+  },
+  "Trimmers": {
+    "Stihl":["FS 38","FS 40","FS 56","FS 70","FS 91","FS 111","FS 131","FS 240","KM 91","KM 131"],
+    "Echo":["SRM-225","SRM-2620","SRM-266","SRM-3020","PAS-225"],
+    "Husqvarna":["128LD","129C","324L","525L","535LS"],
+    "Ryobi":[],"Craftsman":[],"Troy-Bilt":[],"Shindaiwa":["T242","T302"]
+  },
+  "Blowers": {
+    "Stihl":["BG 50","BG 56","BG 86","BR 350","BR 430","BR 450","BR 600","BR 700","BR 800"],
+    "Echo":["PB-250","PB-2520","PB-580T","PB-760LNT","PB-770T","PB-8010T","PB-9010T"],
+    "Husqvarna":["125B","350BT","150BT","570BTS","580BTS"],
+    "Redmax":["EBZ7500","EBZ8500"],"Makita":[],"Ryobi":[]
+  },
+  "Mowers": {
+    "Honda":["HRN216","HRX217","HRC216","HRR216"],
+    "Toro":["Recycler 22","TimeMaster 30","Super Recycler"],
+    "John Deere":["S100","S120","E120","X350","D105"],
+    "Husqvarna":["LC221","YTH18542","Z254"],
+    "Craftsman":["M105","T110","YT3000"],
+    "Cub Cadet":["XT1","SC 100"],"Troy-Bilt":[],"Snapper":[],"Scag":[],"Exmark":[]
+  },
+  "Generators": {
+    "Honda":["EU2200i","EU3000is","EU7000is","EB5000","EM5000"],
+    "Generac":["GP3500","GP6500","GP8000E","iQ3500"],
+    "Champion":["3500","4500","7500"],
+    "Predator":["2000","3500","9000"],
+    "Westinghouse":["iGen2200","WGen7500"],"DuroMax":[]
+  },
+  "Pressure washers": {
+    "Simpson":["MegaShot","PowerShot"],"Generac":[],"Ryobi":[],"Honda":[],"Karcher":[]
+  },
+  "Other": {}
+};
+var DEFAULT_CATS = ["Chainsaws","Trimmers","Blowers","Mowers","Generators","Pressure washers","Other"];
+
+var items = [], cats = [], fCatSel = 'all', fStatus = 'all', editId = null;
+var $ = function(id){ return document.getElementById(id); };
+
+function money(n){
+  var neg = n < 0; n = Math.abs(n);
+  var s = '$' + n.toLocaleString('en-US',{minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits:2});
+  return neg ? '-' + s : s;
+}
+function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function isSold(i){ return i.sale !== null && i.sale !== undefined && i.sale !== ''; }
+function profitOf(i){ return num(i.sale) - num(i.buy) - num(i.parts); }
+function costOf(i){ return num(i.buy) + num(i.parts); }
+function catName(id){ var c = cats.find(function(x){return x.id===id;}); return c ? c.name : 'No category'; }
+function esc(s){ return String(s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function fmtDate(d){ if(!d) return ''; var p=d.split('-'); return p[1]+'/'+p[2]+'/'+p[0].slice(2); }
+function toast(t){ var el=$('toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(function(){el.classList.remove('show');},1800); }
+
+// ---------- Live sync ----------
+CATS.orderBy('order').onSnapshot(function(snap){
+  if(snap.empty && !snap.metadata.fromCache){
+    var b = db.batch();
+    DEFAULT_CATS.forEach(function(n,i){ b.set(CATS.doc(), {name:n, order:i}); });
+    b.commit();
+    return;
+  }
+  cats = snap.docs.map(function(d){ return {id:d.id, name:d.data().name, order:d.data().order}; });
+  renderCats(); render();
+}, onErr);
+
+ITEMS.onSnapshot({includeMetadataChanges:true}, function(snap){
+  items = snap.docs.map(function(d){ var x=d.data(); x.id=d.id; return x; });
+  $('sync').textContent = snap.metadata.hasPendingWrites ? 'Saving…' : (snap.metadata.fromCache ? 'Offline, will sync' : '✓ Synced');
+  render();
+}, onErr);
+
+function onErr(e){ $('sync').textContent = '⚠ Not connected'; console.error(e); }
+
+// ---------- Render ----------
+function renderCats(){
+  var h = '<button class="chip'+(fCatSel==='all'?' on':'')+'" data-c="all">All</button>';
+  cats.forEach(function(c){ h += '<button class="chip'+(fCatSel===c.id?' on':'')+'" data-c="'+c.id+'">'+esc(c.name)+'</button>'; });
+  h += '<button class="chip tool" data-c="edit">Edit categories</button>';
+  $('cats').innerHTML = h;
+  var sel = $('fCat').value;
+  $('fCat').innerHTML = cats.map(function(c){ return '<option value="'+c.id+'">'+esc(c.name)+'</option>'; }).join('');
+  if(sel) $('fCat').value = sel;
+}
+
+function render(){
+  var sold = items.filter(isSold), stock = items.filter(function(i){return !isSold(i);});
+  var tp = sold.reduce(function(a,i){return a+profitOf(i);},0);
+  $('tProfit').textContent = money(tp);
+  $('tSold').textContent = sold.length;
+  $('tStock').textContent = stock.length;
+  $('tInvested').textContent = money(stock.reduce(function(a,i){return a+costOf(i);},0));
+
+  var q = $('q').value.trim().toLowerCase();
+  var list = items.filter(function(i){
+    if(fCatSel!=='all' && i.cat!==fCatSel) return false;
+    if(fStatus==='sold' && !isSold(i)) return false;
+    if(fStatus==='stock' && isSold(i)) return false;
+    if(q && ((i.brand||'')+' '+(i.model||'')+' '+(i.origin||'')+' '+(i.notes||'')).toLowerCase().indexOf(q)<0) return false;
+    return true;
+  }).sort(function(a,b){ return (b.got||'').localeCompare(a.got||'') || (b.created||0)-(a.created||0); });
+
+  if(!list.length){
+    $('list').innerHTML = '<div class="empty">'+(items.length ? 'Nothing matches. Try another category or search.' : 'No machines yet. Tap “Add machine” to add the first one.')+'</div>';
+    return;
+  }
+  function card(i){
+    var s = isSold(i), p = profitOf(i);
+    var cls = s ? (p<0?'lost':'sold') : '';
+    var dates = [];
+    if(i.got) dates.push('Got '+fmtDate(i.got));
+    if(i.sold) dates.push('Sold '+fmtDate(i.sold));
+    var meta = [fCatSel==='all'?'':catName(i.cat), i.origin].filter(Boolean).map(esc).join(', ');
+    return '<button class="item '+cls+'" data-id="'+i.id+'">'+
+      '<div><h3>'+esc((i.brand||'')+' '+(i.model||'')).trim()+'</h3>'+
+      (meta?'<div class="meta">'+meta+'</div>':'')+
+      (dates.length?'<div class="meta">'+dates.join(', ')+'</div>':'')+'</div>'+
+      '<div class="money">'+(s
+        ? '<div class="p '+(p<0?'loss':'gain')+'">'+money(p)+'</div><div class="s">sold for '+money(num(i.sale))+'</div>'
+        : '<div class="p">'+money(costOf(i))+'</div><div class="s">expenditure</div>')+
+      '</div></button>';
+  }
+  if(fCatSel!=='all'){ $('list').innerHTML = list.map(card).join(''); return; }
+  var html = '', known = {};
+  cats.forEach(function(c){
+    known[c.id]=1;
+    var g = list.filter(function(i){return i.cat===c.id;});
+    if(g.length) html += '<div class="group">'+esc(c.name)+'<span>'+g.length+'</span></div>'+g.map(card).join('');
+  });
+  var rest = list.filter(function(i){return !known[i.cat];});
+  if(rest.length) html += '<div class="group">No category<span>'+rest.length+'</span></div>'+rest.map(card).join('');
+  $('list').innerHTML = html;
+}
+
+// ---------- Suggestions ----------
+function catNameById(id){ return catName(id); }
+function refreshBrands(){
+  var cn = catNameById($('fCat').value), set = {};
+  var hasCat = PRESETS[cn] && Object.keys(PRESETS[cn]).length;
+  Object.keys(PRESETS).forEach(function(k){ if(!hasCat || k===cn) Object.keys(PRESETS[k]).forEach(function(b){ set[b]=1; }); });
+  items.forEach(function(i){ if(i.brand) set[i.brand]=1; });
+  $('brandList').innerHTML = Object.keys(set).sort().map(function(b){return '<option value="'+esc(b)+'">';}).join('');
+  refreshModels();
+}
+function refreshModels(){
+  var cn = catNameById($('fCat').value), br = $('fBrand').value.trim().toLowerCase(), set = {};
+  var hasCat = PRESETS[cn] && Object.keys(PRESETS[cn]).length;
+  Object.keys(PRESETS).forEach(function(k){
+    if(hasCat && k!==cn) return;
+    Object.keys(PRESETS[k]).forEach(function(b){
+      if(b.toLowerCase()===br) PRESETS[k][b].forEach(function(m){ set[m]=1; });
+    });
+  });
+  items.forEach(function(i){ if(i.model && (i.brand||'').toLowerCase()===br) set[i.model]=1; });
+  $('modelList').innerHTML = Object.keys(set).map(function(m){return '<option value="'+esc(m)+'">';}).join('');
+}
+function refreshOrigins(){
+  var set = {"Facebook Marketplace":1,"Craigslist":1,"Auction":1,"Yard sale":1,"Trade":1};
+  items.forEach(function(i){ if(i.origin) set[i.origin]=1; });
+  $('originList').innerHTML = Object.keys(set).map(function(o){return '<option value="'+esc(o)+'">';}).join('');
+}
+function updateCalc(){
+  var sale = $('fSale').value, cost = num($('fBuy').value)+num($('fParts').value);
+  $('calcCost').textContent = money(cost);
+  if(sale===''){ $('profitRow').style.display='none'; }
+  else { var p = num(sale)-cost; $('profitRow').style.display=''; $('calcVal').textContent=money(p); $('calcVal').className='p '+(p<0?'loss':'gain'); }
+}
+
+// ---------- Item sheet ----------
+function openItem(id){
+  editId = id || null;
+  var i = id ? items.find(function(x){return x.id===id;}) : {};
+  $('itemTitle').textContent = id ? 'Edit machine' : 'Add machine';
+  $('delBtn').style.display = id ? '' : 'none';
+  $('fCat').value = i.cat || (fCatSel!=='all' ? fCatSel : (cats[0]&&cats[0].id));
+  $('fBrand').value = i.brand||''; $('fModel').value = i.model||''; $('fOrigin').value = i.origin||'';
+  $('fBuy').value = i.buy!=null?i.buy:''; $('fParts').value = i.parts!=null?i.parts:'';
+  $('fSale').value = i.sale!=null?i.sale:'';
+  $('fGot').value = i.got || (id?'':new Date().toISOString().slice(0,10));
+  $('fSold').value = i.sold||''; $('fNotes').value = i.notes||'';
+  refreshBrands(); refreshOrigins(); updateCalc();
+  $('itemBg').classList.add('open');
+}
+function closeItem(){ $('itemBg').classList.remove('open'); }
+
+$('saveBtn').onclick = function(){
+  var brand = $('fBrand').value.trim(), model = $('fModel').value.trim();
+  if(!brand && !model){ toast('Add a brand or model first'); return; }
+  var sale = $('fSale').value;
+  var soldDate = $('fSold').value;
+  if(sale!=='' && !soldDate) soldDate = new Date().toISOString().slice(0,10);
+  var data = {
+    cat:$('fCat').value, brand:brand, model:model, origin:$('fOrigin').value.trim(),
+    buy: $('fBuy').value===''?null:num($('fBuy').value),
+    parts: $('fParts').value===''?null:num($('fParts').value),
+    sale: sale===''?null:num(sale),
+    got:$('fGot').value, sold: sale===''? $('fSold').value : soldDate,
+    notes:$('fNotes').value.trim()
+  };
+  if(editId){ ITEMS.doc(editId).update(data); toast('Saved'); }
+  else { data.created = Date.now(); ITEMS.add(data); toast('Added'); }
+  closeItem();
+};
+$('delBtn').onclick = function(){
+  if(editId && confirm('Delete this machine? This can’t be undone.')){ ITEMS.doc(editId).delete(); toast('Deleted'); closeItem(); }
+};
+$('cancelBtn').onclick = closeItem;
+$('itemBg').onclick = function(e){ if(e.target===this) closeItem(); };
+['fBuy','fParts','fSale'].forEach(function(id){ $(id).oninput = updateCalc; });
+$('fCat').onchange = refreshBrands;
+$('fBrand').oninput = refreshModels;
+$('addBtn').onclick = function(){ openItem(null); };
+
+// ---------- Categories sheet ----------
+function openCats(){
+  $('catEdit').innerHTML = cats.map(function(c,k){
+    var n = items.filter(function(i){return i.cat===c.id;}).length;
+    return '<div class="catrow"><button class="mv" data-up="'+c.id+'" aria-label="Move up"'+(k===0?' disabled':'')+'>▲</button><button class="mv" data-down="'+c.id+'" aria-label="Move down"'+(k===cats.length-1?' disabled':'')+'>▼</button><input data-id="'+c.id+'" value="'+esc(c.name)+'"><span class="meta">'+n+'</span><button class="x" data-del="'+c.id+'">Delete</button></div>';
+  }).join('');
+  $('catBg').classList.add('open');
+}
+$('catEdit').onchange = function(e){
+  var id = e.target.dataset.id, v = e.target.value.trim();
+  if(id && v){ CATS.doc(id).update({name:v}); toast('Renamed'); }
+};
+function moveCat(id,dir){
+  var arr = cats.slice(), k = arr.findIndex(function(c){return c.id===id;}), j = k+dir;
+  if(k<0||j<0||j>=arr.length) return;
+  var t = arr[k]; arr[k]=arr[j]; arr[j]=t;
+  var b = db.batch();
+  arr.forEach(function(c,i){ b.update(CATS.doc(c.id),{order:i}); });
+  cats = arr.map(function(c,i){ c.order=i; return c; });
+  renderCats(); render(); openCats();
+  b.commit();
+}
+$('catEdit').onclick = function(e){
+  var bt = e.target.closest('button'); if(!bt) return;
+  if(bt.dataset.up){ moveCat(bt.dataset.up,-1); return; }
+  if(bt.dataset.down){ moveCat(bt.dataset.down,1); return; }
+  var id = bt.dataset.del; if(!id) return;
+  if(cats.length<2){ toast('Keep at least one category'); return; }
+  var inIt = items.filter(function(i){return i.cat===id;});
+  var other = cats.find(function(c){return c.id!==id;});
+  var msg = inIt.length ? 'Delete “'+catName(id)+'”? Its '+inIt.length+' machine(s) will move to “'+other.name+'”.' : 'Delete “'+catName(id)+'”?';
+  if(!confirm(msg)) return;
+  var b = db.batch();
+  inIt.forEach(function(i){ b.update(ITEMS.doc(i.id),{cat:other.id}); });
+  b.delete(CATS.doc(id));
+  b.commit().then(function(){ if(fCatSel===id) fCatSel='all'; setTimeout(openCats,50); toast('Deleted'); });
+};
+$('addCat').onclick = function(){
+  var v = $('newCat').value.trim(); if(!v) return;
+  CATS.add({name:v, order:cats.length}).then(function(){ $('newCat').value=''; setTimeout(openCats,50); toast('Category added'); });
+};
+$('catDone').onclick = function(){ $('catBg').classList.remove('open'); };
+$('catBg').onclick = function(e){ if(e.target===this) this.classList.remove('open'); };
+
+$('exportBtn').onclick = function(){
+  var rows = [['Category','Brand','Model','Origin','Purchase price','Parts expenditure','Sale price','Profit','Date acquired','Date sold','Notes']];
+  items.forEach(function(i){
+    rows.push([catName(i.cat),i.brand,i.model,i.origin,i.buy,i.parts,i.sale,isSold(i)?profitOf(i).toFixed(2):'',i.got,i.sold,i.notes]);
+  });
+  var csv = rows.map(function(r){ return r.map(function(v){ v = v==null?'':String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(','); }).join('\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = 'machine-money-'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+};
+
+// ---------- Filters ----------
+$('cats').onclick = function(e){
+  var c = e.target.dataset.c; if(!c) return;
+  if(c==='edit'){ openCats(); return; }
+  fCatSel = c; renderCats(); render();
+};
+$('statusChips').onclick = function(e){
+  var s = e.target.dataset.s; if(!s) return;
+  fStatus = s;
+  Array.prototype.forEach.call(this.children,function(b){ b.classList.toggle('on', b.dataset.s===s); });
+  render();
+};
+$('q').oninput = render;
+$('list').onclick = function(e){ var b = e.target.closest('.item'); if(b) openItem(b.dataset.id); };
+</script>
+</body>
+</html>

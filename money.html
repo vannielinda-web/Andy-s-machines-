@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Machine $">
+<meta name="apple-mobile-web-app-title" content="Equipment Ledger">
 <meta name="theme-color" content="#F37021">
-<title>Machine Money</title>
+<title>Equipment Ledger</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
@@ -40,7 +40,8 @@ header{background:var(--green);color:#fff;padding:calc(14px + env(safe-area-inse
 .row3 span{font-size:12px;opacity:.9}
 
 .bar{position:sticky;top:0;z-index:5;background:var(--paper);padding:10px 12px 6px;border-bottom:1px solid var(--line)}
-.search{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#F7F7F7}
+.sw{position:relative}.sw svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--orange)}
+.search{width:100%;padding:11px 12px 11px 38px;border:1px solid var(--line);border-radius:10px;background:#F7F7F7}
 .chips{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding-bottom:4px}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex-shrink:0;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:14px;white-space:nowrap}
@@ -59,6 +60,10 @@ header{background:var(--green);color:#fff;padding:calc(14px + env(safe-area-inse
 .money .p{font-family:var(--display);font-size:24px;font-weight:700}
 .money .s{font-size:12px;color:var(--muted)}
 .gain{color:var(--gain)} .loss{color:var(--loss)}
+.group{font-family:var(--display);font-size:18px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.5px;margin:14px 2px 6px;display:flex;justify-content:space-between}.group span{color:var(--muted);font-size:14px}
+.group:first-child{margin-top:4px}
+.mv{border:1px solid var(--line);background:#fff;border-radius:8px;width:34px;height:34px;font-size:16px}.mv:disabled{opacity:.3}
+.totalbar{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:14px;border-radius:10px;background:var(--orange);color:#fff}.totalbar b{display:block;font-family:var(--display);font-size:20px}.totalbar span{display:block;font-size:13px;opacity:.9}.tb{text-align:right;font-family:var(--display);font-size:26px;font-weight:700}.tb span{font-family:var(--body);font-weight:400}
 .empty{text-align:center;color:var(--muted);padding:40px 20px}
 
 .fab{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));background:var(--orange);color:#fff;border:none;border-radius:12px;padding:15px;font-family:var(--display);font-size:20px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2)}
@@ -70,7 +75,7 @@ header{background:var(--green);color:#fff;padding:calc(14px + env(safe-area-inse
 label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
 .field{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:16px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.calc{margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center}
+.calc{margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center}
 .calc .p{font-family:var(--display);font-size:28px;font-weight:700}
 .btns{display:flex;gap:8px;margin-top:16px}
 .btn{flex:1;padding:13px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:600}
@@ -88,7 +93,7 @@ label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
 
 <header>
   <div class="top">
-    <div class="title">Machine Money</div>
+    <div class="title">Equipment Ledger</div>
     <div class="sync" id="sync">Connecting…</div>
   </div>
   <div class="big">
@@ -97,17 +102,17 @@ label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
   </div>
   <div class="row3">
     <div><b id="tSold">0</b><span>Sold</span></div>
-    <div><b id="tStock">0</b><span>Not sold yet</span></div>
-    <div><b id="tInvested">$0</b><span>Money in unsold</span></div>
+    <div><b id="tStock">0</b><span>Unsold</span></div>
+    <div><b id="tInvested">$0</b><span>Current inventory cost</span></div>
   </div>
 </header>
 
 <div class="bar">
-  <input class="search" id="q" type="search" placeholder="Search brand, model, where from…">
+  <div class="sw"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><input class="search" id="q" type="search" placeholder="Search brand, model, origin…" aria-label="Search"></div>
   <div class="chips" id="cats"></div>
   <div class="status" id="statusChips">
     <button class="chip on" data-s="all">All</button>
-    <button class="chip" data-s="stock">Not sold</button>
+    <button class="chip" data-s="stock">Unsold</button>
     <button class="chip" data-s="sold">Sold</button>
   </div>
 </div>
@@ -128,22 +133,25 @@ label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
     </div>
     <datalist id="brandList"></datalist>
     <datalist id="modelList"></datalist>
-    <label for="fOrigin">Where he got it</label>
+    <label for="fOrigin">Origin</label>
     <input class="field" id="fOrigin" list="originList" autocomplete="off" placeholder="Facebook, auction, yard sale…">
     <datalist id="originList"></datalist>
     <div class="two">
-      <div><label for="fBuy">Buy price ($)</label><input class="field" id="fBuy" type="number" inputmode="decimal" min="0" step="0.01"></div>
-      <div><label for="fParts">Part cost ($)</label><input class="field" id="fParts" type="number" inputmode="decimal" min="0" step="0.01"></div>
+      <div><label for="fBuy">Purchase price ($)</label><input class="field" id="fBuy" type="number" inputmode="decimal" min="0" step="0.01"></div>
+      <div><label for="fParts">Parts expenditure ($)</label><input class="field" id="fParts" type="number" inputmode="decimal" min="0" step="0.01"></div>
     </div>
-    <label for="fSale">Sale price ($)</label>
-    <input class="field" id="fSale" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Leave empty if not sold">
+    <div class="two">
+      <div><label for="fAsk">Asking price ($)</label><input class="field" id="fAsk" type="number" inputmode="decimal" min="0" step="0.01"></div>
+      <div><label for="fSale">Sale price ($)</label><input class="field" id="fSale" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Empty if unsold"></div>
+    </div>
     <div class="two">
       <div><label for="fGot">Date acquired</label><input class="field" id="fGot" type="date"></div>
       <div><label for="fSold">Date sold</label><input class="field" id="fSold" type="date"></div>
     </div>
     <label for="fNotes">Notes</label>
     <input class="field" id="fNotes" autocomplete="off">
-    <div class="calc"><span id="calcLbl">Profit</span><span class="p" id="calcVal">$0</span></div>
+    <div class="calc"><span>Total expenditure</span><span class="p" id="calcCost">$0</span></div>
+    <div class="calc" id="profitRow"><span>Profit</span><span class="p" id="calcVal">$0</span></div>
     <div class="btns">
       <button class="btn del" id="delBtn">Delete</button>
       <button class="btn" id="cancelBtn">Cancel</button>
@@ -313,22 +321,35 @@ function render(){
     $('list').innerHTML = '<div class="empty">'+(items.length ? 'Nothing matches. Try another category or search.' : 'No machines yet. Tap “Add machine” to add the first one.')+'</div>';
     return;
   }
-  $('list').innerHTML = list.map(function(i){
+  function card(i){
     var s = isSold(i), p = profitOf(i);
     var cls = s ? (p<0?'lost':'sold') : '';
     var dates = [];
     if(i.got) dates.push('Got '+fmtDate(i.got));
     if(i.sold) dates.push('Sold '+fmtDate(i.sold));
-    var meta = [catName(i.cat), i.origin].filter(Boolean).map(esc).join(', ');
+    var meta = [fCatSel==='all'?'':catName(i.cat), i.origin].filter(Boolean).map(esc).join(', ');
     return '<button class="item '+cls+'" data-id="'+i.id+'">'+
       '<div><h3>'+esc((i.brand||'')+' '+(i.model||'')).trim()+'</h3>'+
-      '<div class="meta">'+meta+'</div>'+
-      (dates.length?'<div class="meta">'+dates.join(', ')+'</div>':'')+'</div>'+
+      (meta?'<div class="meta">'+meta+'</div>':'')+
+      (dates.length?'<div class="meta">'+dates.join(', ')+'</div>':'')+
+      (i.ask!=null&&!s?'<div class="meta">Asking '+money(num(i.ask))+'</div>':'')+'</div>'+
       '<div class="money">'+(s
         ? '<div class="p '+(p<0?'loss':'gain')+'">'+money(p)+'</div><div class="s">sold for '+money(num(i.sale))+'</div>'
-        : '<div class="p">'+money(costOf(i))+'</div><div class="s">spent so far</div>')+
+        : '<div class="p">'+money(costOf(i))+'</div><div class="s">expenditure</div>')+
       '</div></button>';
-  }).join('');
+  }
+  function sum(a){ return a.reduce(function(t,i){return t+num(i.ask);},0); }
+  var foot = '<div class="totalbar"><div><b>Inventory total</b><span>'+list.length+' machine'+(list.length===1?'':'s')+'</span></div><div class="tb">'+money(sum(list))+'<span>total asking price</span></div></div>';
+  if(fCatSel!=='all'){ $('list').innerHTML = list.map(card).join('') + foot; return; }
+  var html = '', known = {};
+  cats.forEach(function(c){
+    known[c.id]=1;
+    var g = list.filter(function(i){return i.cat===c.id;});
+    if(g.length) html += '<div class="group">'+esc(c.name)+'<span>'+g.length+' · '+money(sum(g))+'</span></div>'+g.map(card).join('');
+  });
+  var rest = list.filter(function(i){return !known[i.cat];});
+  if(rest.length) html += '<div class="group">No category<span>'+rest.length+' · '+money(sum(rest))+'</span></div>'+rest.map(card).join('');
+  $('list').innerHTML = html + foot;
 }
 
 // ---------- Suggestions ----------
@@ -360,8 +381,9 @@ function refreshOrigins(){
 }
 function updateCalc(){
   var sale = $('fSale').value, cost = num($('fBuy').value)+num($('fParts').value);
-  if(sale===''){ $('calcLbl').textContent='Spent so far'; $('calcVal').textContent=money(cost); $('calcVal').className='p'; }
-  else { var p = num(sale)-cost; $('calcLbl').textContent='Profit'; $('calcVal').textContent=money(p); $('calcVal').className='p '+(p<0?'loss':'gain'); }
+  $('calcCost').textContent = money(cost);
+  if(sale===''){ $('profitRow').style.display='none'; }
+  else { var p = num(sale)-cost; $('profitRow').style.display=''; $('calcVal').textContent=money(p); $('calcVal').className='p '+(p<0?'loss':'gain'); }
 }
 
 // ---------- Item sheet ----------
@@ -373,7 +395,7 @@ function openItem(id){
   $('fCat').value = i.cat || (fCatSel!=='all' ? fCatSel : (cats[0]&&cats[0].id));
   $('fBrand').value = i.brand||''; $('fModel').value = i.model||''; $('fOrigin').value = i.origin||'';
   $('fBuy').value = i.buy!=null?i.buy:''; $('fParts').value = i.parts!=null?i.parts:'';
-  $('fSale').value = i.sale!=null?i.sale:'';
+  $('fSale').value = i.sale!=null?i.sale:''; $('fAsk').value = i.ask!=null?i.ask:'';
   $('fGot').value = i.got || (id?'':new Date().toISOString().slice(0,10));
   $('fSold').value = i.sold||''; $('fNotes').value = i.notes||'';
   refreshBrands(); refreshOrigins(); updateCalc();
@@ -392,6 +414,7 @@ $('saveBtn').onclick = function(){
     buy: $('fBuy').value===''?null:num($('fBuy').value),
     parts: $('fParts').value===''?null:num($('fParts').value),
     sale: sale===''?null:num(sale),
+    ask: $('fAsk').value===''?null:num($('fAsk').value),
     got:$('fGot').value, sold: sale===''? $('fSold').value : soldDate,
     notes:$('fNotes').value.trim()
   };
@@ -411,9 +434,9 @@ $('addBtn').onclick = function(){ openItem(null); };
 
 // ---------- Categories sheet ----------
 function openCats(){
-  $('catEdit').innerHTML = cats.map(function(c){
+  $('catEdit').innerHTML = cats.map(function(c,k){
     var n = items.filter(function(i){return i.cat===c.id;}).length;
-    return '<div class="catrow"><input data-id="'+c.id+'" value="'+esc(c.name)+'"><span class="meta">'+n+'</span><button class="x" data-del="'+c.id+'">Delete</button></div>';
+    return '<div class="catrow"><button class="mv" data-up="'+c.id+'" aria-label="Move up"'+(k===0?' disabled':'')+'>▲</button><button class="mv" data-down="'+c.id+'" aria-label="Move down"'+(k===cats.length-1?' disabled':'')+'>▼</button><input data-id="'+c.id+'" value="'+esc(c.name)+'"><span class="meta">'+n+'</span><button class="x" data-del="'+c.id+'">Delete</button></div>';
   }).join('');
   $('catBg').classList.add('open');
 }
@@ -421,8 +444,21 @@ $('catEdit').onchange = function(e){
   var id = e.target.dataset.id, v = e.target.value.trim();
   if(id && v){ CATS.doc(id).update({name:v}); toast('Renamed'); }
 };
+function moveCat(id,dir){
+  var arr = cats.slice(), k = arr.findIndex(function(c){return c.id===id;}), j = k+dir;
+  if(k<0||j<0||j>=arr.length) return;
+  var t = arr[k]; arr[k]=arr[j]; arr[j]=t;
+  var b = db.batch();
+  arr.forEach(function(c,i){ b.update(CATS.doc(c.id),{order:i}); });
+  cats = arr.map(function(c,i){ c.order=i; return c; });
+  renderCats(); render(); openCats();
+  b.commit();
+}
 $('catEdit').onclick = function(e){
-  var id = e.target.dataset.del; if(!id) return;
+  var bt = e.target.closest('button'); if(!bt) return;
+  if(bt.dataset.up){ moveCat(bt.dataset.up,-1); return; }
+  if(bt.dataset.down){ moveCat(bt.dataset.down,1); return; }
+  var id = bt.dataset.del; if(!id) return;
   if(cats.length<2){ toast('Keep at least one category'); return; }
   var inIt = items.filter(function(i){return i.cat===id;});
   var other = cats.find(function(c){return c.id!==id;});
@@ -435,15 +471,15 @@ $('catEdit').onclick = function(e){
 };
 $('addCat').onclick = function(){
   var v = $('newCat').value.trim(); if(!v) return;
-  CATS.add({name:v, order:Date.now()}).then(function(){ $('newCat').value=''; setTimeout(openCats,50); toast('Category added'); });
+  CATS.add({name:v, order:cats.length}).then(function(){ $('newCat').value=''; setTimeout(openCats,50); toast('Category added'); });
 };
 $('catDone').onclick = function(){ $('catBg').classList.remove('open'); };
 $('catBg').onclick = function(e){ if(e.target===this) this.classList.remove('open'); };
 
 $('exportBtn').onclick = function(){
-  var rows = [['Category','Brand','Model','Where from','Buy price','Part cost','Sale price','Profit','Date acquired','Date sold','Notes']];
+  var rows = [['Category','Brand','Model','Origin','Purchase price','Parts expenditure','Asking price','Sale price','Profit','Date acquired','Date sold','Notes']];
   items.forEach(function(i){
-    rows.push([catName(i.cat),i.brand,i.model,i.origin,i.buy,i.parts,i.sale,isSold(i)?profitOf(i).toFixed(2):'',i.got,i.sold,i.notes]);
+    rows.push([catName(i.cat),i.brand,i.model,i.origin,i.buy,i.parts,i.ask,i.sale,isSold(i)?profitOf(i).toFixed(2):'',i.got,i.sold,i.notes]);
   });
   var csv = rows.map(function(r){ return r.map(function(v){ v = v==null?'':String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(','); }).join('\n');
   var a = document.createElement('a');

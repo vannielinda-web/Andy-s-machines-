@@ -63,6 +63,7 @@ button{cursor:pointer}
 .bg{font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px}
 .F1{background:#dbeafe;color:#1e40af} .F2{background:#ede9fe;color:#5b21b6} .CL{background:#fee2e2;color:#991b1b}
 .sd{background:var(--gainbg);color:var(--gain)}
+.bg.off{background:#f1f5f9;color:#cbd5e1}
 .money{text-align:right;flex-shrink:0}
 .money .p{font-size:17px;font-weight:700;color:var(--navy)}
 .money .s{font-size:11px;color:var(--muted)}
@@ -195,6 +196,7 @@ button{cursor:pointer}
     <input class="field" id="fNotes" autocomplete="off">
     <div class="calc"><span>Total expenditure</span><span class="p" id="calcCost">$0</span></div>
     <div class="calc" id="profitRow"><span>Profit</span><span class="p" id="calcVal">$0</span></div>
+    <button class="btn" id="restockBtn" style="width:100%;margin-top:12px;color:var(--navy);border-color:#93c5fd;background:#eff6ff">↩ Return to stock (remove sale)</button>
     <div class="btns">
       <button class="btn del" id="delBtn">Delete</button>
       <button class="btn" id="cancelBtn">Cancel</button>
@@ -450,8 +452,10 @@ function card(i, showCat){
   if(i.got) dates.push('Got '+fmtDate(i.got));
   if(i.sold) dates.push('Sold '+fmtDate(i.sold));
   var meta = [showCat?catName(i.cat):'', i.origin].filter(Boolean).map(esc).join(' · ');
-  var badges = (i.pl||[]).filter(function(k){return PL[k];}).map(function(k){ return '<span class="bg '+k+'">'+PL[k]+'</span>'; }).join('');
-  if(s) badges = '<span class="bg sd">Sold</span>' + badges;
+  // Always show all three in the same order and spot; unused ones are greyed out.
+  var on = i.pl||[];
+  var badges = ['F1','F2','CL'].map(function(k){ return '<span class="bg '+(on.indexOf(k)>=0?k:'off')+'">'+PL[k]+'</span>'; }).join('');
+  if(s) badges += '<span class="bg sd">Sold</span>';
   return '<button class="item" data-id="'+i.id+'">'+
     (i.thumb?'<img class="th" src="'+i.thumb+'" alt="">':'')+
     '<div style="min-width:0;flex:1"><h3>'+esc(nameOf(i))+'</h3>'+
@@ -565,6 +569,7 @@ function openItem(id){
   var i = id ? items.find(function(x){return x.id===id;}) : {};
   $('itemTitle').textContent = id ? 'Edit machine' : 'Add machine';
   $('delBtn').style.display = id ? '' : 'none';
+  $('restockBtn').style.display = (id && isSold(i)) ? '' : 'none';
   $('fCat').value = i.cat || (tab!=='all'&&tab!=='sold' ? tab : (cats[0]&&cats[0].id));
   $('fBrand').value = i.brand||''; $('fModel').value = i.model||''; $('fOrigin').value = i.origin||'';
   $('fBuy').value = i.buy!=null?i.buy:''; $('fParts').value = i.parts!=null?i.parts:'';
@@ -601,13 +606,13 @@ $('saveBtn').onclick = function(){
   var prev = editId ? items.find(function(x){return x.id===editId;}) : null;
   var data = {
     cat:$('fCat').value, brand:brand, model:model, origin:$('fOrigin').value.trim(),
-    pl: curPl.slice(),
+    pl: ['F1','F2','CL'].filter(function(k){ return curPl.indexOf(k)>=0; }),
     buy: $('fBuy').value===''?null:num($('fBuy').value),
     parts: $('fParts').value===''?null:num($('fParts').value),
     ask: $('fAsk').value===''?null:num($('fAsk').value),
     sale: sale===''?null:num(sale),
     got:$('fGot').value,
-    sold: sale==='' ? $('fSold').value : ($('fSold').value || today()),
+    sold: sale==='' ? '' : ($('fSold').value || today()),
     notes:$('fNotes').value.trim()
   };
   var justSold = sale!=='' && !(prev && isSold(prev));
@@ -631,6 +636,11 @@ $('delBtn').onclick = function(){
     PHOTOS.where('item','==',id).get().then(function(snap){ snap.docs.forEach(function(d){ d.ref.delete(); }); });
     toast('Deleted'); closeItem();
   }
+};
+$('restockBtn').onclick = function(){
+  if(!editId || !confirm('Return this machine to stock? This removes the sale price and date sold.')) return;
+  ITEMS.doc(editId).update({sale:null, sold:''});
+  closeItem(); toast('Back in stock');
 };
 $('cancelBtn').onclick = closeItem;
 $('itemBg').onclick = function(e){ if(e.target===this) closeItem(); };

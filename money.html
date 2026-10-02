@@ -449,7 +449,7 @@ function renderTabs(){
 function card(i, showCat){
   var s = isSold(i), p = profitOf(i);
   var dates = [];
-  if(i.got) dates.push('Got '+fmtDate(i.got));
+  if(i.got) dates.push('Received '+fmtDate(i.got));
   if(i.sold) dates.push('Sold '+fmtDate(i.sold));
   var meta = [showCat?catName(i.cat):'', i.origin].filter(Boolean).map(esc).join(' · ');
   // Always show all three in the same order and spot; unused ones are greyed out.
@@ -460,13 +460,13 @@ function card(i, showCat){
     (i.thumb?'<img class="th" src="'+i.thumb+'" alt="">':'')+
     '<div style="min-width:0;flex:1"><h3>'+esc(nameOf(i))+'</h3>'+
     (meta?'<div class="meta">'+meta+'</div>':'')+
-    (i.ask!=null&&!s?'<div class="ask">Asking '+money(num(i.ask))+'</div>':'')+
+    (!s?'<div class="meta">Expenditure '+money(costOf(i))+'</div>':'')+
     (dates.length?'<div class="meta">'+dates.join(' · ')+'</div>':'')+
     (i.photos>1?'<div class="meta">📷 '+i.photos+' photos</div>':'')+
     (badges?'<div class="bgs">'+badges+'</div>':'')+'</div>'+
     '<div class="money">'+(s
       ? '<div class="p '+(p<0?'loss':'gain')+'">'+money(p)+'</div><div class="s">sold for '+money(num(i.sale))+'</div>'
-      : '<div class="p">'+money(costOf(i))+'</div><div class="s">expenditure</div>')+
+      : (i.ask!=null ? '<div class="p">'+money(num(i.ask))+'</div><div class="s">asking</div>' : '<div class="p" style="color:#cbd5e1">—</div><div class="s">no asking price</div>'))+
     '</div></button>';
 }
 
@@ -756,12 +756,12 @@ function tick(){
   if(!soundOn) return;
   try{
     var a = ctx(), t = a.currentTime, o = a.createOscillator(), g = a.createGain();
-    o.type='triangle'; o.frequency.setValueAtTime(1800,t); o.frequency.exponentialRampToValueAtTime(900,t+0.03);
-    g.gain.setValueAtTime(0.12,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
-    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+0.06);
+    o.type='sine'; o.frequency.setValueAtTime(700,t); o.frequency.exponentialRampToValueAtTime(500,t+0.04);
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.035,t+0.006); g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+0.08);
   }catch(e){}
 }
-document.addEventListener('pointerdown', function(e){ if(e.target.closest('button, .ft, select')) tick(); });
+document.addEventListener('pointerdown', function(e){ var b = e.target.closest('button'); if(b && !b.classList.contains('item')) tick(); });
 function paintSound(){ $('soundBtn').textContent = soundOn ? '🔊 Sounds: On' : '🔇 Sounds: Off'; }
 paintSound();
 $('soundBtn').onclick = function(){

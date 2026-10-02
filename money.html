@@ -5,126 +5,163 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Equipment Ledger">
-<meta name="theme-color" content="#F37021">
-<title>Equipment Ledger</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bobshop">
+<meta name="theme-color" content="#1e3a5f">
+<link rel="manifest" href="ledger-manifest.json">
+<link rel="icon" href="ledger-icon-192.png">
+<link rel="apple-touch-icon" href="ledger-icon-192.png">
+<title>Bobshop</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <style>
 :root{
-  --green:#F37021; --orange:#F37021; --paper:#FFFFFF; --card:#FFFFFF;
-  --ink:#222222; --muted:#6E6E6E; --line:#E4E4E4; --gain:#2E7D4F; --loss:#B3261E;
-  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
-  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --navy:#1e3a5f; --bg:#f0f4f8; --card:#fff; --ink:#1a202c; --muted:#64748b; --line:#e2e8f0;
+  --gain:#166534; --gainbg:#dcfce7; --loss:#991b1b; --lossbg:#fee2e2;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px}
-body{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+html,body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
-:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
 
-header{background:var(--green);color:#fff;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 18px}
-.top{display:flex;justify-content:space-between;align-items:center}
-.title{font-family:var(--display);font-size:22px;font-weight:700;letter-spacing:.3px}
-.sync{font-size:12px;opacity:.9}
-.big{margin-top:14px}
-.big .num{font-family:var(--display);font-size:46px;font-weight:700;line-height:1}
-.big .lbl{font-size:13px;opacity:.9;margin-top:2px}
-.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
-.row3 div{background:rgba(255,255,255,.2);border-radius:10px;padding:8px 10px}
-.row3 b{display:block;font-family:var(--display);font-size:20px;font-weight:600}
-.row3 span{font-size:12px;opacity:.9}
+.hdr{background:var(--navy);color:#fff;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;display:flex;align-items:center;justify-content:space-between}
+.hdr h1{font-size:18px;font-weight:700}
+.hdr p{font-size:11px;opacity:.65;margin-top:2px}
+.hdr-btn.add{background:#fff;color:var(--navy)}
+.hdr-btn{background:rgba(255,255,255,.15);border:none;color:#fff;font-size:12px;font-weight:600;padding:8px 11px;border-radius:8px}
+.sync{text-align:center;padding:6px;font-size:12px;font-weight:600;background:var(--gainbg);color:var(--gain)}
+.sync.saving{background:#fef9c3;color:#854d0e}
+.sync.error{background:var(--lossbg);color:var(--loss)}
 
-.bar{position:sticky;top:0;z-index:5;background:var(--paper);padding:10px 12px 6px;border-bottom:1px solid var(--line)}
-.sw{position:relative}.sw svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--orange)}
-.search{width:100%;padding:11px 12px 11px 38px;border:1px solid var(--line);border-radius:10px;background:#F7F7F7}
-.chips{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding-bottom:4px}
-.chips::-webkit-scrollbar{display:none}
-.chip{flex-shrink:0;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:14px;white-space:nowrap}
-.chip.on{background:var(--orange);color:#fff;border-color:var(--orange)}
-.chip.tool{border-style:dashed;color:var(--muted)}
-.status{display:flex;gap:6px;margin-top:6px}
-.status .chip{flex:1;text-align:center}
+.sbar{display:grid;grid-template-columns:repeat(4,1fr);background:#fff;border-bottom:1px solid var(--line);padding:10px 0}
+.st{text-align:center;padding:0 2px}
+.sn{font-size:18px;font-weight:700;color:var(--navy)}
+.sn.g{color:var(--gain)} .sn.r{color:var(--loss)}
+.sl{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:1px}
 
-.list{padding:10px 12px}
-.item{display:flex;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--line);box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:5px solid var(--orange);border-radius:10px;padding:12px;margin-bottom:8px;width:100%;text-align:left}
-.item.sold{border-left-color:var(--gain)}
-.item.lost{border-left-color:var(--loss)}
-.item h3{font-family:var(--display);font-size:20px;font-weight:600;line-height:1.1}
-.meta{font-size:13px;color:var(--muted);margin-top:3px}
+.sticky{position:sticky;top:0;z-index:20;background:var(--bg)}
+.ftabs{display:flex;background:#fff;border-bottom:2px solid var(--line);overflow-x:auto}
+.ftabs::-webkit-scrollbar{display:none}
+.ft{flex-shrink:0;padding:10px 13px;font-size:13px;font-weight:500;color:var(--muted);border:none;background:none;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.ft.on{color:var(--navy);border-bottom-color:var(--navy);font-weight:700}
+.ft.soldtab.on{color:var(--gain);border-bottom-color:var(--gain)}
+.sw{position:relative;padding:8px 12px}
+.sw svg{position:absolute;left:24px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.search{width:100%;padding:10px 12px 10px 36px;border:1.5px solid var(--line);border-radius:9px;background:#fff;font-size:15px;outline:none}
+.search:focus{border-color:var(--navy)}
+
+.list{padding:2px 12px}
+.shd{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;border-radius:9px;margin:12px 0 6px;color:#fff;font-size:13px;font-weight:600}
+.shd span{opacity:.9;font-weight:500}
+.item{display:flex;justify-content:space-between;gap:10px;background:var(--card);border:none;border-radius:11px;padding:11px 12px;margin-bottom:6px;width:100%;text-align:left;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.item h3{font-size:15px;font-weight:600;color:var(--ink)}
+.meta{font-size:12px;color:var(--muted);margin-top:2px}
+.ask{font-size:12px;color:var(--navy);font-weight:600;margin-top:2px}
+.bgs{display:flex;gap:3px;margin-top:5px;flex-wrap:wrap}
+.bg{font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px}
+.F1{background:#dbeafe;color:#1e40af} .F2{background:#ede9fe;color:#5b21b6} .CL{background:#fee2e2;color:#991b1b}
+.sd{background:var(--gainbg);color:var(--gain)}
 .money{text-align:right;flex-shrink:0}
-.money .p{font-family:var(--display);font-size:24px;font-weight:700}
-.money .s{font-size:12px;color:var(--muted)}
-.gain{color:var(--gain)} .loss{color:var(--loss)}
-.group{font-family:var(--display);font-size:18px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.5px;margin:14px 2px 6px;display:flex;justify-content:space-between}.group span{color:var(--muted);font-size:14px}
-.group:first-child{margin-top:4px}
-.mv{border:1px solid var(--line);background:#fff;border-radius:8px;width:34px;height:34px;font-size:16px}.mv:disabled{opacity:.3}
-.totalbar{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:14px;border-radius:10px;background:var(--orange);color:#fff}.totalbar b{display:block;font-family:var(--display);font-size:20px}.totalbar span{display:block;font-size:13px;opacity:.9}.tb{text-align:right;font-family:var(--display);font-size:26px;font-weight:700}.tb span{font-family:var(--body);font-weight:400}
-.empty{text-align:center;color:var(--muted);padding:40px 20px}
+.money .p{font-size:17px;font-weight:700;color:var(--navy)}
+.money .s{font-size:11px;color:var(--muted)}
+.gain{color:var(--gain)!important} .loss{color:var(--loss)!important}
+.th{width:56px;height:56px;border-radius:9px;object-fit:cover;flex-shrink:0;background:#e2e8f0}
+.photos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.ph{position:relative;aspect-ratio:1;border-radius:9px;overflow:hidden;background:#e2e8f0}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .rm{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:13px;line-height:1}
+.ph .cover{position:absolute;left:3px;bottom:3px;font-size:9px;font-weight:700;background:var(--navy);color:#fff;padding:1px 5px;border-radius:9px}
+.addph{aspect-ratio:1;border:2px dashed #cbd5e1;border-radius:9px;background:#f8fafc;color:var(--navy);font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.addph b{font-size:22px;line-height:1}
+.viewer{position:fixed;inset:0;background:#000;z-index:80;display:none;align-items:center;justify-content:center}
+.viewer.open{display:flex}
+.viewer img{max-width:100%;max-height:100%;object-fit:contain}
+.vbtn{position:absolute;border:none;background:rgba(255,255,255,.18);color:#fff;border-radius:50%;width:44px;height:44px;font-size:20px}
+.vclose{top:calc(14px + env(safe-area-inset-top,0px));right:14px}
+.vprev{left:10px;top:50%;transform:translateY(-50%)} .vnext{right:10px;top:50%;transform:translateY(-50%)}
+.vcount{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;color:#fff;font-size:14px}
+.empty{text-align:center;color:#94a3b8;padding:40px 20px;font-size:14px}
+.totalbar{display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px;padding:13px 14px;border-radius:11px;background:var(--navy);color:#fff}
+.totalbar.soldbar{background:var(--gain)}
+.totalbar b{display:block;font-size:15px}
+.totalbar span{display:block;font-size:12px;opacity:.85;margin-top:1px}
+.tb{text-align:right;font-size:20px;font-weight:700}
 
-.fab{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));background:var(--orange);color:#fff;border:none;border-radius:12px;padding:15px;font-family:var(--display);font-size:20px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.fab{position:fixed;bottom:calc(22px + env(safe-area-inset-bottom,0px));right:18px;width:58px;height:58px;border-radius:50%;background:var(--navy);color:#fff;font-size:30px;border:none;box-shadow:0 4px 14px rgba(30,58,95,.4);z-index:30;line-height:1}
 
-.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:20;align-items:flex-end;justify-content:center}
-.sheet-bg.open{display:flex}
-.sheet{background:#F7F7F7;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))}
-.sheet h2{font-family:var(--display);font-size:24px;margin-bottom:12px}
-label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
-.field{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:16px}
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;align-items:flex-end;justify-content:center}
+.ov.open{display:flex}
+.mod{background:#fff;border-radius:20px 20px 0 0;padding:20px 16px calc(24px + env(safe-area-inset-bottom,0px));width:100%;max-width:560px;max-height:92vh;overflow-y:auto}
+.mod h2{font-size:17px;font-weight:700;margin-bottom:6px}
+.mod label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:12px 0 4px}
+.field{width:100%;padding:11px;font-size:16px;border:1.5px solid var(--line);border-radius:9px;background:#f8fafc;outline:none;-webkit-appearance:none}
+.field:focus{border-color:var(--navy);background:#fff}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.calc{margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center}
-.calc .p{font-family:var(--display);font-size:28px;font-weight:700}
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.po{padding:10px 4px;border:1.5px solid var(--line);border-radius:9px;text-align:center;font-size:12px;font-weight:700;color:var(--muted);background:#f8fafc}
+.po.on.F1{background:#dbeafe;border-color:#93c5fd;color:#1e40af}
+.po.on.F2{background:#ede9fe;border-color:#c4b5fd;color:#5b21b6}
+.po.on.CL{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+.calc{margin-top:10px;background:#f8fafc;border:1.5px solid var(--line);border-radius:9px;padding:11px 12px;display:flex;justify-content:space-between;align-items:center;font-weight:600}
+.calc .p{font-size:20px;font-weight:700;color:var(--navy)}
 .btns{display:flex;gap:8px;margin-top:16px}
-.btn{flex:1;padding:13px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:600}
-.btn.main{background:var(--green);color:#fff;border-color:var(--green)}
-.btn.del{color:var(--loss);border-color:#E7C3BF}
-.catrow{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px}
-.catrow input{flex:1;border:none;padding:6px;font-size:16px;background:transparent}
-.x{border:none;background:none;color:var(--loss);font-size:14px;font-weight:600;padding:6px}
-.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;z-index:30;pointer-events:none}
+.btn{flex:1;padding:12px;border-radius:11px;border:1.5px solid var(--line);background:#fff;font-size:15px;font-weight:600;color:var(--muted)}
+.btn.main{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.del{color:var(--loss);border-color:#fecaca}
+.catrow{display:flex;gap:6px;align-items:center;background:#f8fafc;border:1.5px solid var(--line);border-radius:9px;padding:6px 8px;margin-bottom:6px}
+.dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.catrow input{flex:1;min-width:0;border:none;padding:6px;font-size:15px;font-weight:600;background:transparent;outline:none}
+.mv{border:1.5px solid var(--line);background:#fff;border-radius:8px;width:32px;height:32px;font-size:13px;color:var(--navy)}
+.mv:disabled{opacity:.3}
+.x{border:none;background:none;color:var(--loss);font-size:13px;font-weight:600;padding:6px}
+.addc{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:600}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;z-index:60;pointer-events:none}
 .toast.show{opacity:1}
-@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+
+/* SOLD celebration */
+.party{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;background:rgba(22,101,52,.25);overflow:hidden}
+.party.show{display:flex}
+.sold-card{background:#fff;border-radius:20px;padding:26px 30px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25);animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
+.sold-card .big{font-size:44px;font-weight:800;color:var(--gain);letter-spacing:1px}
+.sold-card .pr{font-size:22px;font-weight:700;margin-top:4px}
+.sold-card .nm{font-size:14px;color:var(--muted);margin-top:4px}
+.coin{position:absolute;top:-40px;font-size:30px;animation:fall linear forwards}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.sold-card{animation:none}.coin{display:none}.toast{transition:none}}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="top">
-    <div class="title">Equipment Ledger</div>
-    <div class="sync" id="sync">Connecting…</div>
-  </div>
-  <div class="big">
-    <div class="num" id="tProfit">$0</div>
-    <div class="lbl">Total profit on sold machines</div>
-  </div>
-  <div class="row3">
-    <div><b id="tSold">0</b><span>Sold</span></div>
-    <div><b id="tStock">0</b><span>Unsold</span></div>
-    <div><b id="tInvested">$0</b><span>Current inventory cost</span></div>
-  </div>
-</header>
-
-<div class="bar">
-  <div class="sw"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><input class="search" id="q" type="search" placeholder="Search brand, model, origin…" aria-label="Search"></div>
-  <div class="chips" id="cats"></div>
-  <div class="status" id="statusChips">
-    <button class="chip on" data-s="all">All</button>
-    <button class="chip" data-s="stock">Unsold</button>
-    <button class="chip" data-s="sold">Sold</button>
-  </div>
+<div class="hdr">
+  <div><h1>💰 Bobshop</h1><p id="sync-sub">Tap a machine to edit</p></div>
+  <div style="display:flex;gap:6px"><button class="hdr-btn" id="catBtn">📂 Categories</button><button class="hdr-btn add" id="addBtn" aria-label="Add machine">+ Add</button></div>
+</div>
+<div class="sync" id="sync">☁️ Connecting…</div>
+<div class="sbar">
+  <div class="st"><div class="sn g" id="tProfit">$0</div><div class="sl">Profit</div></div>
+  <div class="st"><div class="sn" id="tStock">0</div><div class="sl">Unsold</div></div>
+  <div class="st"><div class="sn g" id="tSold">0</div><div class="sl">Sold</div></div>
+  <div class="st"><div class="sn" id="tInvested">$0</div><div class="sl">Inventory cost</div></div>
 </div>
 
-<div class="list" id="list"></div>
+<div class="sticky">
+  <div class="ftabs" id="tabs"></div>
+  <div class="sw"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><input class="search" id="q" type="search" placeholder="Search brand, model, origin…" aria-label="Search"></div>
+</div>
 
-<button class="fab" id="addBtn">+ Add machine</button>
+<div class="list" id="list"><div class="empty">☁️ Loading…</div></div>
 
-<!-- Item sheet -->
-<div class="sheet-bg" id="itemBg">
-  <div class="sheet">
+
+<!-- Item form -->
+<div class="ov" id="itemBg">
+  <div class="mod">
     <h2 id="itemTitle">Add machine</h2>
+    <label>Photos</label>
+    <div class="photos" id="photoGrid"></div>
+    <input type="file" id="photoIn" accept="image/*" multiple hidden>
     <label for="fCat">Category</label>
     <select class="field" id="fCat"></select>
     <div class="two">
@@ -136,6 +173,12 @@ label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
     <label for="fOrigin">Origin</label>
     <input class="field" id="fOrigin" list="originList" autocomplete="off" placeholder="Facebook, auction, yard sale…">
     <datalist id="originList"></datalist>
+    <label>Listed on</label>
+    <div class="pg" id="plGroup">
+      <button type="button" class="po F1" data-pl="F1">Facebook 1</button>
+      <button type="button" class="po F2" data-pl="F2">Facebook 2</button>
+      <button type="button" class="po CL" data-pl="CL">Craigslist</button>
+    </div>
     <div class="two">
       <div><label for="fBuy">Purchase price ($)</label><input class="field" id="fBuy" type="number" inputmode="decimal" min="0" step="0.01"></div>
       <div><label for="fParts">Parts expenditure ($)</label><input class="field" id="fParts" type="number" inputmode="decimal" min="0" step="0.01"></div>
@@ -160,15 +203,16 @@ label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
   </div>
 </div>
 
-<!-- Categories sheet -->
-<div class="sheet-bg" id="catBg">
-  <div class="sheet">
-    <h2>Categories</h2>
-    <div id="catEdit"></div>
+<!-- Categories -->
+<div class="ov" id="catBg">
+  <div class="mod">
+    <h2>📂 Categories</h2>
+    <div id="catEdit" style="margin-top:10px"></div>
     <div class="catrow">
       <input id="newCat" placeholder="New category name">
-      <button class="x" id="addCat" style="color:var(--green)">Add</button>
+      <button class="addc" id="addCat">Add</button>
     </div>
+    <button class="btn" id="soundBtn" style="width:100%;margin-top:10px"></button>
     <div class="btns">
       <button class="btn" id="exportBtn">Download spreadsheet</button>
       <button class="btn main" id="catDone">Done</button>
@@ -176,11 +220,17 @@ label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
   </div>
 </div>
 
+<div class="party" id="party"><div class="sold-card"><div class="big">SOLD!</div><div class="pr" id="partyProfit"></div><div class="nm" id="partyName"></div></div></div>
+<div class="viewer" id="viewer">
+  <img id="vImg" alt="Machine photo">
+  <button class="vbtn vclose" id="vClose" aria-label="Close">✕</button>
+  <button class="vbtn vprev" id="vPrev" aria-label="Previous">‹</button>
+  <button class="vbtn vnext" id="vNext" aria-label="Next">›</button>
+  <div class="vcount" id="vCount"></div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
-// Same Firebase project as the inventory app, but separate collections,
-// so money data never mixes with the inventory list.
 var firebaseConfig = {
   apiKey: "AIzaSyA9S6Fs7TeAvJnMXGCjY6y8MZC9fCKXXpw",
   authDomain: "andys-inventory.firebaseapp.com",
@@ -190,69 +240,159 @@ var firebaseConfig = {
   appId: "1:944013049347:web:0605171960c47dcc1b1836"
 };
 if(typeof firebase==='undefined'){
-  document.addEventListener('DOMContentLoaded',function(){
-    document.getElementById('sync').textContent='⚠ Not connected';
-    document.getElementById('list').innerHTML='<div class="empty">Can’t reach the database. Check the internet connection and reload. (This also happens in the Claude preview, which blocks the database. It works from the GitHub link.)</div>';
-  });
+  document.getElementById('sync').textContent='⚠ Not connected';
+  document.getElementById('sync').className='sync error';
+  document.getElementById('list').innerHTML='<div class="empty">Can’t reach the database. Check the internet connection and reload. (The Claude preview also blocks it. It works from the GitHub link.)</div>';
   throw new Error('Firebase did not load');
 }
 firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
 try { db.enablePersistence({synchronizeTabs:true}).catch(function(){}); } catch(e){}
+// Separate collections from the inventory app. This app never reads or writes 'inventory' or 'categories'.
 var ITEMS = db.collection('money_items');
 var CATS  = db.collection('money_categories');
+var PHOTOS = db.collection('money_photos');
 
-// Brand and model presets. He can always type something not on the list,
-// and anything he types once shows up as a suggestion next time.
-var PRESETS = {
-  "Chainsaws": {
-    "Stihl":["MS 170","MS 180","MS 181","MS 211","MS 250","MS 261","MS 271","MS 291","MS 311","MS 362","MS 391","MS 400","MS 461","MS 500i","MS 661","026","036","044","046","066"],
-    "Husqvarna":["135","235","240","435","440","445","450","455 Rancher","460 Rancher","562XP","572XP","372XP","550XP","390XP","395XP"],
-    "Echo":["CS-271T","CS-310","CS-352","CS-400","CS-450","CS-490","CS-501P","CS-590 Timberwolf","CS-620P","CS-7310P"],
-    "Jonsered":["CS2240","CS2245","CS2252","CS2255","CS2260","2171"],
-    "Poulan":["P3314","P3816","Wild Thing","Pro 5020"],
-    "Dolmar":["PS-420","PS-5105","PS-6100"],
-    "Makita":["EA3500","EA4300","EA5100","XCU03"],
-    "Homelite":["Super XL","XL-12","Timberman"],
-    "McCulloch":["Pro Mac 610","Mini Mac"],
-    "Craftsman":["S165","S180"],
-    "Ryobi":[],"DeWalt":[],"Milwaukee":["M18 Fuel"]
-  },
-  "Trimmers": {
-    "Stihl":["FS 38","FS 40","FS 56","FS 70","FS 91","FS 111","FS 131","FS 240","KM 91","KM 131"],
-    "Echo":["SRM-225","SRM-2620","SRM-266","SRM-3020","PAS-225"],
-    "Husqvarna":["128LD","129C","324L","525L","535LS"],
-    "Ryobi":[],"Craftsman":[],"Troy-Bilt":[],"Shindaiwa":["T242","T302"]
-  },
-  "Blowers": {
-    "Stihl":["BG 50","BG 56","BG 86","BR 350","BR 430","BR 450","BR 600","BR 700","BR 800"],
-    "Echo":["PB-250","PB-2520","PB-580T","PB-760LNT","PB-770T","PB-8010T","PB-9010T"],
-    "Husqvarna":["125B","350BT","150BT","570BTS","580BTS"],
-    "Redmax":["EBZ7500","EBZ8500"],"Makita":[],"Ryobi":[]
-  },
-  "Mowers": {
-    "Honda":["HRN216","HRX217","HRC216","HRR216"],
-    "Toro":["Recycler 22","TimeMaster 30","Super Recycler"],
-    "John Deere":["S100","S120","E120","X350","D105"],
-    "Husqvarna":["LC221","YTH18542","Z254"],
-    "Craftsman":["M105","T110","YT3000"],
-    "Cub Cadet":["XT1","SC 100"],"Troy-Bilt":[],"Snapper":[],"Scag":[],"Exmark":[]
-  },
-  "Generators": {
-    "Honda":["EU2200i","EU3000is","EU7000is","EB5000","EM5000"],
-    "Generac":["GP3500","GP6500","GP8000E","iQ3500"],
-    "Champion":["3500","4500","7500"],
-    "Predator":["2000","3500","9000"],
-    "Westinghouse":["iGen2200","WGen7500"],"DuroMax":[]
-  },
-  "Pressure washers": {
-    "Simpson":["MegaShot","PowerShot"],"Generac":[],"Ryobi":[],"Honda":[],"Karcher":[]
-  },
-  "Other": {}
+// Brand -> type -> models. He can always type a model that isn't listed;
+// anything he types once shows up as a suggestion next time.
+var MODELS = {
+"Stihl":{
+ "Chainsaw":["009","010","011","012","015","017","018","019T","020","021","023","024","025","026","028","029","030","031","032","034","036","038","039","041","042","044","045","046","048","050","051","056","064","066","070","075","076","084","088","090","MS 150","MS 162","MS 170","MS 171","MS 180","MS 181","MS 192T","MS 193T","MS 194T","MS 200T","MS 201T","MS 210","MS 211","MS 230","MS 231","MS 250","MS 251","MS 260","MS 261","MS 270","MS 271","MS 280","MS 290","MS 291","MS 310","MS 311","MS 341","MS 361","MS 362","MS 390","MS 391","MS 400","MS 440","MS 441","MS 460","MS 461","MS 462","MS 500i","MS 650","MS 660","MS 661","MS 880","MSA 120","MSA 140","MSA 160","MSA 200","MSA 220","MSA 300"],
+ "Cut-off saw":["TS 350","TS 360","TS 400","TS 410","TS 420","TS 460","TS 500i","TS 510","TS 700","TS 760","TS 800"],
+ "Trimmer":["FS 38","FS 40","FS 45","FS 46","FS 50","FS 55","FS 56","FS 70","FS 80","FS 85","FS 87","FS 90","FS 91","FS 94","FS 100","FS 110","FS 111","FS 120","FS 130","FS 131","FS 200","FS 240","FS 250","FS 260","FS 310","FS 350","FS 360","FS 400","FS 410","FS 450","FS 460","FS 480","FS 490","FS 560","FSA 57","FSA 60","FSA 86","FSA 90","FSA 130","KM 56","KM 90","KM 91","KM 94","KM 110","KM 111","KM 130","KM 131"],
+ "Edger":["FC 55","FC 56","FC 75","FC 90","FC 91","FC 95","FC 96","FC 110","FC 111"],
+ "Hedge trimmer":["HS 45","HS 46","HS 56","HS 75","HS 80","HS 81","HS 82","HS 85","HS 86","HS 87","HSA 56","HSA 86","HL 90","HL 91","HL 94","HL 100","HL 135","HLA 56","HLA 85"],
+ "Pole saw":["HT 56","HT 75","HT 100","HT 101","HT 103","HT 131","HT 133","HT 135","HTA 85"],
+ "Blower":["BG 45","BG 50","BG 55","BG 56","BG 65","BG 75","BG 85","BG 86","BGA 56","BGA 86","BR 200","BR 320","BR 340","BR 350","BR 380","BR 400","BR 420","BR 430","BR 450","BR 500","BR 550","BR 600","BR 700","BR 800","SH 56","SH 86"],
+ "Other":["BT 45","BT 121","BT 131","SR 200","SR 420","SR 430","SR 450","MM 55","MM 56","RE 90","RE 100","RE 110","RE 130"]
+},
+"Husqvarna":{
+ "Chainsaw":["23","33","36","41","42","44","50","51","55","61","65","66","77","120 Mark II","130","135","140","162","181","235","236","240","266","268","272XP","281XP","288XP","340","345","346XP","350","353","357XP","359","362XP","365","371XP","372XP","385XP","390XP","395XP","435","440","445","450","455 Rancher","460 Rancher","543XP","545","550XP","555","560XP","562XP","565","572XP","585","592XP","3120XP","120i","330i","340i","535i XP","540i XP","T525","T540XP"],
+ "Cut-off saw":["K650","K750","K760","K770","K970","K1270"],
+ "Trimmer":["128C","128LD","129C","129L","129LK","223L","324L","325L","525L","525LST","525RX","535LS","545RX","555FX","115iL","520iLX"],
+ "Hedge trimmer":["122HD60","226HD60","522HDR60","525HE3"],
+ "Blower":["125B","125BVx","150BT","350BT","360BT","370BTS","380BTS","525BX","530BT","570BTS","580BTS"],
+ "Mower":["LC121P","LC221A","HU700F","YTH18542","YTH24V48","TS 348","Z254","MZ54","Automower 315","Automower 430X"]
+},
+"Redmax":{
+ "Blower":["EB4300","EB7001","EBZ5100","EBZ5150","EBZ7500RH","EBZ8500RH","EBZ8550","EBZ9000","HB260"],
+ "Trimmer":["BCZ2460S","BCZ2610","BCZ260TS","BCZ2650S","BCZ3000","TR2350S"],
+ "Edger":["LE230","LE2300"],
+ "Hedge trimmer":["CHTZ2401","CHTZ2600"],
+ "Chainsaw":["GZ4000","GZ7000"]
+},
+"Echo":{
+ "Chainsaw":["CS-271T","CS-280","CS-300","CS-303T","CS-306","CS-310","CS-341","CS-346","CS-352","CS-355T","CS-361P","CS-370","CS-400","CS-440","CS-450P","CS-490","CS-500P","CS-501P","CS-510","CS-530","CS-590 Timberwolf","CS-600P","CS-620P","CS-680","CS-7310P","CS-8000"],
+ "Trimmer":["GT-200","GT-225","GT-230","GT-2000","SRM-210","SRM-225","SRM-230","SRM-2100","SRM-2620","SRM-266","SRM-280","SRM-3020","SRM-410","PAS-225","PAS-266"],
+ "Edger":["PE-225","PE-266","PE-2620"],
+ "Hedge trimmer":["HC-150","HC-152","HC-155","HCA-266"],
+ "Pole saw":["PPT-266","PPT-280"],
+ "Blower":["PB-250","PB-251","PB-255","PB-265L","PB-403T","PB-413T","PB-460LN","PB-500T","PB-580T","PB-620","PB-650","PB-750T","PB-755ST","PB-760LNT","PB-770T","PB-8010T","PB-9010T"],
+ "Other":["MS-53BH"]
+},
+"Shindaiwa":{
+ "Trimmer":["T222","T235","T242","T262","T282","T302","T344","C35","C344","C350"],
+ "Edger":["EB212","LE242"],
+ "Blower":["EB600RT","EB630","EB633RT","EB802","EB810","EB854","EB8520"],
+ "Hedge trimmer":["DH231","DH232","HT230","AH230"],
+ "Pole saw":["P230","P231"],
+ "Chainsaw":["360","377","416","488","577"]
+},
+"Jonsered":{
+ "Chainsaw":["370","451","490","510","520","535","590","621","625","630","670 Champ","690","820","830","910","920","2041","2045","2050","2051","2054","2055","2063","2065","2071","2077","2083","2094","2141","2145","2149","2150","2152","2153","2156","2159","2163","2165","2171","2186","2188","CS2234","CS2238","CS2240","CS2245","CS2250","CS2252","CS2253","CS2255","CS2258","CS2260"],
+ "Trimmer":["GR2032","GR2126","GR2128"]
+},
+"Makita":{
+ "Chainsaw":["EA3200S","EA3201S","EA3202S","EA3500S","EA3501S","EA4300F","EA5000P","EA5100P","EA6100P","EA7300P","EA7900P","DCS340","DCS3410","DCS4300","DCS4610","DCS5000","DCS5030","DCS5121","DCS6000","DCS6401","DCS6421","DCS7301","DCS7901","DCS9010","XCU02","XCU03","XCU04","XCU06","XCU08","XCU11"],
+ "Cut-off saw":["EK6100","EK7651","DPC6430","DPC7311"],
+ "Blower":["EB5300TH","EB7650TH","EB7660TH","BHX2501","XBU02"],
+ "Trimmer":["EM2650LH","XRU15"],
+ "Hedge trimmer":["XHU02"],
+ "Mower":["XML03","XML08"]
+},
+"Dolmar":{
+ "Chainsaw":["109","111","112","115","116","117","119","120","123","133","143","153","PS-33","PS-34","PS-340","PS-341","PS-400","PS-401","PS-420","PS-460","PS-4600","PS-500","PS-5000","PS-510","PS-5100","PS-5105","PS-540","PS-6000","PS-6100","PS-7300","PS-7900","PS-9010"],
+ "Cut-off saw":["PC-6412","PC-7314","PC-7414"]
+},
+"Little Wonder":{
+ "Blower":["Optimax","Pro Blower 9 HP","Pro Blower 13 HP","Pro Blower 18 HP"],
+ "Vacuum":["Pro Vac SI","Truckloader"],
+ "Edger":["Bed Redefiner","Edger"],
+ "Hedge trimmer":["Hedge Trimmer 24\"","Hedge Trimmer 30\""]
+},
+"Scag":{
+ "Mower":["Turf Tiger","Turf Tiger II","Tiger Cat","Tiger Cat II","Cheetah","Cheetah II","Patriot","Freedom Z","Liberty Z","V-Ride","V-Ride II","SW walk-behind","SWZ","SWZU","SFZ"]
+},
+"Giant Vac":{
+ "Vacuum":["Lawn Vacuum","Truck Loader","Leaf Loader","Chipper Vac"],
+ "Blower":["Walk-Behind Blower"]
+},
+"Wacker Neuson":{
+ "Compactor":["BS50-2","BS60-2","BS50-4","BS60-4","BS65-V","BS70-2","WP1540","WP1550","VP1550","VP2050","VPR1750","BPU2540","BPU3050","DPU2550","DPU3050","DPU4045","DPU6555","RTx-SC3"]
+},
+"Honda":{
+ "Generator":["EU1000i","EU2000i","EU2200i","EU3000is","EU3200i","EU7000is","EB2800i","EB3000c","EB5000","EB6500","EB10000","EM5000","EM6500"],
+ "Mower":["HRB217","HRC216","HRN216","HRR216","HRS216","HRT216","HRX217"],
+ "Pump":["WB20","WB30","WMP20","WT20","WT30","WT40","WX10","WX15"],
+ "Engine":["GX35","GX100","GX120","GX160","GX200","GX240","GX270","GX340","GX390","GX630","GX690","GC160","GCV160","GCV170","GCV190","GCV200"],
+ "Tiller":["FG110","FC600","FRC800"],
+ "Snowblower":["HS520","HS720","HS724","HSS724","HSS928","HSS1332"],
+ "Trimmer":["HHT25S","HHT35S","UMK425"]
+},
+"Mi-T-M":{
+ "Pressure washer":["CW-2700","CW-3000","CW-3004","CW-3005","CW-3006","CW-3200","CW-3504","CW-4004"],
+ "Generator":["GEN-3500","GEN-6000","GEN-8000"]
+},
+"Shark":{
+ "Pressure washer":["DP series (direct drive)","BR series (belt drive)","SG series (hot water)","SGP series (hot water)"]
+},
+"Karcher":{
+ "Pressure washer":["K1700","K1800","K2000","K2010","G2700","G2800","G3000","G3200","G4000","HD 2.7","HD 3.5/30","HD 4.0/40","HDS 3.5/30"]
+},
+"Mikasa":{
+ "Compactor":["MT-55","MT-65H","MTX-60","MTX-70","MVC-50","MVC-64","MVC-82","MVC-88","MVH-306","MVH-406"]
+},
+"Multiquip":{
+ "Compactor":["MTX60","MTX70","MVC64","MVC82","MVC88"],
+ "Generator":["DCA-25","DCA-45","DCA-70","GA-2900","GA-3.6","GA-6"],
+ "Pump":["QP2","QP3","QP4"],
+ "Other":["MC-64 mixer","WM70 mixer"]
+},
+"Billy Goat":{
+ "Vacuum":["KV600","KV650","MV600","MV650","TKV650","DL1302","DL1801","DL1802"],
+ "Blower":["F902","F1302","F1802","P1302","X3000"],
+ "Aerator":["AE401","AE402","PL1800"],
+ "Other":["SC121 sod cutter","SC181 sod cutter","OS552 overseeder","OS901 overseeder","BC2600 brushcutter"]
+},
+"Mantis":{
+ "Tiller":["7920 (2-cycle)","7940 (4-cycle Honda)","7222","7225","7250 (electric)","7262"]
+},
+"Yamaha":{
+ "Generator":["EF1000iS","EF2000iS","EF2000iSv2","EF2200iS","EF2400iSHC","EF3000iS","EF3000iSE","EF3000iSEB","EF4500iSE","EF5500DE","EF6300iSDE","EF7200DE"],
+ "Pump":["YP20","YP30","YP20G","YP30G","YP40T"]
+},
+"Homelite":{"Chainsaw":["Super XL","XL-12","Super 2","150","240","360"]},
+"McCulloch":{"Chainsaw":["Mini Mac","Pro Mac 610","Super Pro","SP-81","SP-125"]},
+"Poulan":{"Chainsaw":["P3314","P3816","Wild Thing","Pro 5020"]},
+"Toro":{"Mower":["Recycler 22\"","Super Recycler","TimeMaster 30\"","Proline","Grandstand","Z Master"]},
+"John Deere":{"Mower":["D105","E120","S100","S120","X350"]},
+"Craftsman":{"Mower":["M105","T110","YT3000"],"Edger":["Edger"]},
+"Cub Cadet":{"Mower":["XT1","SC 100"]},
+"Generac":{"Generator":["GP3500","GP6500","GP8000E","iQ3500"]},
+"Champion":{"Generator":["3500","4500","7500"]},
+"Predator":{"Generator":["2000","3500","9000"]},
+"Westinghouse":{"Generator":["iGen2200","WGen7500"]},
+"Coleman":{"Generator":["Powermate 6250"]},
+"Dayton":{"Pump":["2 in pump","3 in pump"]},
+"Simpson":{"Pressure washer":["MegaShot","PowerShot"]},
+"Ryobi":{},"DeWalt":{},"Milwaukee":{},"Troy-Bilt":{},"Snapper":{},"Exmark":{},"DuroMax":{}
 };
-var DEFAULT_CATS = ["Chainsaws","Trimmers","Blowers","Mowers","Generators","Pressure washers","Other"];
 
-var items = [], cats = [], fCatSel = 'all', fStatus = 'all', editId = null;
+var DEFAULT_CATS = ["Chainsaws","Trimmers","Blowers","Mowers","Generators","Pressure washers","Other"];
+var COLORS = ['#1e3a5f','#1e4d2b','#4a1d6e','#991b1b','#92400e','#064e3b','#1e40af','#be185d','#0f766e','#b45309','#374151','#dc2626'];
+var PL = {F1:'Facebook 1',F2:'Facebook 2',CL:'Craigslist'};
+
+var items = [], cats = [], tab = 'all', editId = null, curPl = [], formPhotos = [], removedPhotos = [], newItemId = null;
 var $ = function(id){ return document.getElementById(id); };
 
 function money(n){
@@ -265,114 +405,141 @@ function isSold(i){ return i.sale !== null && i.sale !== undefined && i.sale !==
 function profitOf(i){ return num(i.sale) - num(i.buy) - num(i.parts); }
 function costOf(i){ return num(i.buy) + num(i.parts); }
 function catName(id){ var c = cats.find(function(x){return x.id===id;}); return c ? c.name : 'No category'; }
+function catColor(c,k){ return c.color || COLORS[k % COLORS.length]; }
 function esc(s){ return String(s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function fmtDate(d){ if(!d) return ''; var p=d.split('-'); return p[1]+'/'+p[2]+'/'+p[0].slice(2); }
+function today(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function toast(t){ var el=$('toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(function(){el.classList.remove('show');},1800); }
+function nameOf(i){ return ((i.brand||'')+' '+(i.model||'')).trim(); }
 
 // ---------- Live sync ----------
 CATS.orderBy('order').onSnapshot(function(snap){
   if(snap.empty && !snap.metadata.fromCache){
     var b = db.batch();
     DEFAULT_CATS.forEach(function(n,i){ b.set(CATS.doc(), {name:n, order:i}); });
-    b.commit();
-    return;
+    b.commit(); return;
   }
-  cats = snap.docs.map(function(d){ return {id:d.id, name:d.data().name, order:d.data().order}; });
-  renderCats(); render();
+  cats = snap.docs.map(function(d){ var x=d.data(); return {id:d.id, name:x.name, order:x.order, color:x.color}; });
+  renderTabs(); render();
 }, onErr);
 
 ITEMS.onSnapshot({includeMetadataChanges:true}, function(snap){
   items = snap.docs.map(function(d){ var x=d.data(); x.id=d.id; return x; });
-  $('sync').textContent = snap.metadata.hasPendingWrites ? 'Saving…' : (snap.metadata.fromCache ? 'Offline, will sync' : '✓ Synced');
+  var el=$('sync');
+  if(snap.metadata.hasPendingWrites){ el.textContent='⏳ Saving…'; el.className='sync saving'; }
+  else if(snap.metadata.fromCache){ el.textContent='📴 Offline, will sync'; el.className='sync saving'; }
+  else { el.textContent='✅ Synced'; el.className='sync'; }
   render();
 }, onErr);
-
-function onErr(e){ $('sync').textContent = '⚠ Not connected'; console.error(e); }
+function onErr(e){ $('sync').textContent='⚠ Not connected'; $('sync').className='sync error'; console.error(e); }
 
 // ---------- Render ----------
-function renderCats(){
-  var h = '<button class="chip'+(fCatSel==='all'?' on':'')+'" data-c="all">All</button>';
-  cats.forEach(function(c){ h += '<button class="chip'+(fCatSel===c.id?' on':'')+'" data-c="'+c.id+'">'+esc(c.name)+'</button>'; });
-  h += '<button class="chip tool" data-c="edit">Edit categories</button>';
-  $('cats').innerHTML = h;
+function renderTabs(){
+  var h = '<button class="ft'+(tab==='all'?' on':'')+'" data-t="all">All</button>';
+  cats.forEach(function(c){ h += '<button class="ft'+(tab===c.id?' on':'')+'" data-t="'+c.id+'">'+esc(c.name)+'</button>'; });
+  h += '<button class="ft soldtab'+(tab==='sold'?' on':'')+'" data-t="sold">✅ Sold</button>';
+  $('tabs').innerHTML = h;
   var sel = $('fCat').value;
   $('fCat').innerHTML = cats.map(function(c){ return '<option value="'+c.id+'">'+esc(c.name)+'</option>'; }).join('');
   if(sel) $('fCat').value = sel;
+}
+
+function card(i, showCat){
+  var s = isSold(i), p = profitOf(i);
+  var dates = [];
+  if(i.got) dates.push('Got '+fmtDate(i.got));
+  if(i.sold) dates.push('Sold '+fmtDate(i.sold));
+  var meta = [showCat?catName(i.cat):'', i.origin].filter(Boolean).map(esc).join(' · ');
+  var badges = (i.pl||[]).filter(function(k){return PL[k];}).map(function(k){ return '<span class="bg '+k+'">'+PL[k]+'</span>'; }).join('');
+  if(s) badges = '<span class="bg sd">Sold</span>' + badges;
+  return '<button class="item" data-id="'+i.id+'">'+
+    (i.thumb?'<img class="th" src="'+i.thumb+'" alt="">':'')+
+    '<div style="min-width:0;flex:1"><h3>'+esc(nameOf(i))+'</h3>'+
+    (meta?'<div class="meta">'+meta+'</div>':'')+
+    (i.ask!=null&&!s?'<div class="ask">Asking '+money(num(i.ask))+'</div>':'')+
+    (dates.length?'<div class="meta">'+dates.join(' · ')+'</div>':'')+
+    (i.photos>1?'<div class="meta">📷 '+i.photos+' photos</div>':'')+
+    (badges?'<div class="bgs">'+badges+'</div>':'')+'</div>'+
+    '<div class="money">'+(s
+      ? '<div class="p '+(p<0?'loss':'gain')+'">'+money(p)+'</div><div class="s">sold for '+money(num(i.sale))+'</div>'
+      : '<div class="p">'+money(costOf(i))+'</div><div class="s">expenditure</div>')+
+    '</div></button>';
 }
 
 function render(){
   var sold = items.filter(isSold), stock = items.filter(function(i){return !isSold(i);});
   var tp = sold.reduce(function(a,i){return a+profitOf(i);},0);
   $('tProfit').textContent = money(tp);
+  $('tProfit').className = 'sn '+(tp<0?'r':'g');
   $('tSold').textContent = sold.length;
   $('tStock').textContent = stock.length;
   $('tInvested').textContent = money(stock.reduce(function(a,i){return a+costOf(i);},0));
 
   var q = $('q').value.trim().toLowerCase();
-  var list = items.filter(function(i){
-    if(fCatSel!=='all' && i.cat!==fCatSel) return false;
-    if(fStatus==='sold' && !isSold(i)) return false;
-    if(fStatus==='stock' && isSold(i)) return false;
-    if(q && ((i.brand||'')+' '+(i.model||'')+' '+(i.origin||'')+' '+(i.notes||'')).toLowerCase().indexOf(q)<0) return false;
+  var pool = tab==='sold' ? sold : stock;           // sold machines only live in the Sold tab
+  var list = pool.filter(function(i){
+    if(tab!=='all' && tab!=='sold' && i.cat!==tab) return false;
+    if(q && (nameOf(i)+' '+(i.origin||'')+' '+(i.notes||'')).toLowerCase().indexOf(q)<0) return false;
     return true;
-  }).sort(function(a,b){ return (b.got||'').localeCompare(a.got||'') || (b.created||0)-(a.created||0); });
+  }).sort(function(a,b){
+    if(tab==='sold') return (b.sold||'').localeCompare(a.sold||'') || (b.created||0)-(a.created||0);
+    return (b.got||'').localeCompare(a.got||'') || (b.created||0)-(a.created||0);
+  });
 
   if(!list.length){
-    $('list').innerHTML = '<div class="empty">'+(items.length ? 'Nothing matches. Try another category or search.' : 'No machines yet. Tap “Add machine” to add the first one.')+'</div>';
+    $('list').innerHTML = '<div class="empty">'+(tab==='sold' ? 'No sold machines yet.' : (items.length ? 'Nothing here. Try another category or search.' : 'No machines yet. Tap + Add at the top to add the first one.'))+'</div>';
     return;
   }
-  function card(i){
-    var s = isSold(i), p = profitOf(i);
-    var cls = s ? (p<0?'lost':'sold') : '';
-    var dates = [];
-    if(i.got) dates.push('Got '+fmtDate(i.got));
-    if(i.sold) dates.push('Sold '+fmtDate(i.sold));
-    var meta = [fCatSel==='all'?'':catName(i.cat), i.origin].filter(Boolean).map(esc).join(', ');
-    return '<button class="item '+cls+'" data-id="'+i.id+'">'+
-      '<div><h3>'+esc((i.brand||'')+' '+(i.model||'')).trim()+'</h3>'+
-      (meta?'<div class="meta">'+meta+'</div>':'')+
-      (dates.length?'<div class="meta">'+dates.join(', ')+'</div>':'')+
-      (i.ask!=null&&!s?'<div class="meta">Asking '+money(num(i.ask))+'</div>':'')+'</div>'+
-      '<div class="money">'+(s
-        ? '<div class="p '+(p<0?'loss':'gain')+'">'+money(p)+'</div><div class="s">sold for '+money(num(i.sale))+'</div>'
-        : '<div class="p">'+money(costOf(i))+'</div><div class="s">expenditure</div>')+
-      '</div></button>';
+
+  var foot;
+  if(tab==='sold'){
+    var sales = list.reduce(function(t,i){return t+num(i.sale);},0), pr = list.reduce(function(t,i){return t+profitOf(i);},0);
+    foot = '<div class="totalbar soldbar"><div><b>Sold total</b><span>'+list.length+' machine'+(list.length===1?'':'s')+' · profit '+money(pr)+'</span></div><div class="tb">'+money(sales)+'<span style="font-size:11px;font-weight:400">in sales</span></div></div>';
+  } else {
+    var ask = list.reduce(function(t,i){return t+num(i.ask);},0);
+    foot = '<div class="totalbar"><div><b>Inventory total</b><span>'+list.length+' machine'+(list.length===1?'':'s')+'</span></div><div class="tb">'+money(ask)+'<span style="font-size:11px;font-weight:400">total asking price</span></div></div>';
   }
-  function sum(a){ return a.reduce(function(t,i){return t+num(i.ask);},0); }
-  var foot = '<div class="totalbar"><div><b>Inventory total</b><span>'+list.length+' machine'+(list.length===1?'':'s')+'</span></div><div class="tb">'+money(sum(list))+'<span>total asking price</span></div></div>';
-  if(fCatSel!=='all'){ $('list').innerHTML = list.map(card).join('') + foot; return; }
+
+  if(tab!=='all' && tab!=='sold'){ $('list').innerHTML = list.map(function(i){return card(i,false);}).join('') + foot; return; }
+
   var html = '', known = {};
-  cats.forEach(function(c){
+  cats.forEach(function(c,k){
     known[c.id]=1;
     var g = list.filter(function(i){return i.cat===c.id;});
-    if(g.length) html += '<div class="group">'+esc(c.name)+'<span>'+g.length+' · '+money(sum(g))+'</span></div>'+g.map(card).join('');
+    if(!g.length) return;
+    var sub = tab==='sold' ? g.length+' · '+money(g.reduce(function(t,i){return t+profitOf(i);},0))+' profit'
+                           : g.length+' · '+money(g.reduce(function(t,i){return t+num(i.ask);},0));
+    html += '<div class="shd" style="background:'+catColor(c,k)+'">'+esc(c.name)+'<span>'+sub+'</span></div>'+g.map(function(i){return card(i,false);}).join('');
   });
   var rest = list.filter(function(i){return !known[i.cat];});
-  if(rest.length) html += '<div class="group">No category<span>'+rest.length+' · '+money(sum(rest))+'</span></div>'+rest.map(card).join('');
+  if(rest.length) html += '<div class="shd" style="background:#374151">No category<span>'+rest.length+'</span></div>'+rest.map(function(i){return card(i,false);}).join('');
   $('list').innerHTML = html + foot;
 }
 
 // ---------- Suggestions ----------
-function catNameById(id){ return catName(id); }
+function typeForCat(){
+  var cn = catName($('fCat').value).toLowerCase().replace(/es$|s$/,'');
+  var hit = null;
+  Object.keys(MODELS).forEach(function(b){ Object.keys(MODELS[b]).forEach(function(t){ if(t.toLowerCase()===cn) hit=t; }); });
+  return hit;
+}
 function refreshBrands(){
-  var cn = catNameById($('fCat').value), set = {};
-  var hasCat = PRESETS[cn] && Object.keys(PRESETS[cn]).length;
-  Object.keys(PRESETS).forEach(function(k){ if(!hasCat || k===cn) Object.keys(PRESETS[k]).forEach(function(b){ set[b]=1; }); });
+  var set = {};
+  Object.keys(MODELS).forEach(function(b){ set[b]=1; });
   items.forEach(function(i){ if(i.brand) set[i.brand]=1; });
   $('brandList').innerHTML = Object.keys(set).sort().map(function(b){return '<option value="'+esc(b)+'">';}).join('');
   refreshModels();
 }
 function refreshModels(){
-  var cn = catNameById($('fCat').value), br = $('fBrand').value.trim().toLowerCase(), set = {};
-  var hasCat = PRESETS[cn] && Object.keys(PRESETS[cn]).length;
-  Object.keys(PRESETS).forEach(function(k){
-    if(hasCat && k!==cn) return;
-    Object.keys(PRESETS[k]).forEach(function(b){
-      if(b.toLowerCase()===br) PRESETS[k][b].forEach(function(m){ set[m]=1; });
+  var br = $('fBrand').value.trim().toLowerCase(), want = typeForCat(), first = [], rest = [], seen = {};
+  Object.keys(MODELS).forEach(function(b){
+    if(b.toLowerCase()!==br) return;
+    Object.keys(MODELS[b]).forEach(function(t){
+      MODELS[b][t].forEach(function(m){ if(seen[m]) return; seen[m]=1; (t===want?first:rest).push([m,t]); });
     });
   });
-  items.forEach(function(i){ if(i.model && (i.brand||'').toLowerCase()===br) set[i.model]=1; });
-  $('modelList').innerHTML = Object.keys(set).map(function(m){return '<option value="'+esc(m)+'">';}).join('');
+  items.forEach(function(i){ if(i.model && (i.brand||'').toLowerCase()===br && !seen[i.model]){ seen[i.model]=1; first.push([i.model,'Used before']); } });
+  $('modelList').innerHTML = first.concat(rest).map(function(x){return '<option value="'+esc(x[0])+'" label="'+esc(x[1])+'">';}).join('');
 }
 function refreshOrigins(){
   var set = {"Facebook Marketplace":1,"Craigslist":1,"Auction":1,"Yard sale":1,"Trade":1};
@@ -385,45 +552,85 @@ function updateCalc(){
   if(sale===''){ $('profitRow').style.display='none'; }
   else { var p = num(sale)-cost; $('profitRow').style.display=''; $('calcVal').textContent=money(p); $('calcVal').className='p '+(p<0?'loss':'gain'); }
 }
+function paintPl(){
+  Array.prototype.forEach.call($('plGroup').children,function(b){
+    var on = curPl.indexOf(b.dataset.pl)>=0;
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+  });
+}
 
-// ---------- Item sheet ----------
+// ---------- Item form ----------
 function openItem(id){
   editId = id || null;
   var i = id ? items.find(function(x){return x.id===id;}) : {};
   $('itemTitle').textContent = id ? 'Edit machine' : 'Add machine';
   $('delBtn').style.display = id ? '' : 'none';
-  $('fCat').value = i.cat || (fCatSel!=='all' ? fCatSel : (cats[0]&&cats[0].id));
+  $('fCat').value = i.cat || (tab!=='all'&&tab!=='sold' ? tab : (cats[0]&&cats[0].id));
   $('fBrand').value = i.brand||''; $('fModel').value = i.model||''; $('fOrigin').value = i.origin||'';
   $('fBuy').value = i.buy!=null?i.buy:''; $('fParts').value = i.parts!=null?i.parts:'';
   $('fSale').value = i.sale!=null?i.sale:''; $('fAsk').value = i.ask!=null?i.ask:'';
-  $('fGot').value = i.got || (id?'':new Date().toISOString().slice(0,10));
+  $('fGot').value = i.got || (id?'':today());
   $('fSold').value = i.sold||''; $('fNotes').value = i.notes||'';
+  curPl = (i.pl||[]).slice(); paintPl();
+  formPhotos = []; removedPhotos = []; newItemId = id ? null : ITEMS.doc().id; paintPhotos();
+  if(id){
+    var want = id;
+    PHOTOS.where('item','==',id).get().then(function(snap){
+      if(editId!==want) return;
+      formPhotos = snap.docs.map(function(d){ var x=d.data(); return {id:d.id, data:x.data, thumb:x.thumb, created:x.created||0}; })
+        .sort(function(a,b){return a.created-b.created;}).concat(formPhotos.filter(function(p){return p.isNew;}));
+      paintPhotos();
+    }).catch(function(){ toast('Could not load photos'); });
+  }
   refreshBrands(); refreshOrigins(); updateCalc();
   $('itemBg').classList.add('open');
 }
 function closeItem(){ $('itemBg').classList.remove('open'); }
 
+$('plGroup').onclick = function(e){
+  var b = e.target.closest('[data-pl]'); if(!b) return;
+  var k = b.dataset.pl, at = curPl.indexOf(k);
+  if(at>=0) curPl.splice(at,1); else curPl.push(k);
+  paintPl();
+};
+
 $('saveBtn').onclick = function(){
   var brand = $('fBrand').value.trim(), model = $('fModel').value.trim();
   if(!brand && !model){ toast('Add a brand or model first'); return; }
   var sale = $('fSale').value;
-  var soldDate = $('fSold').value;
-  if(sale!=='' && !soldDate) soldDate = new Date().toISOString().slice(0,10);
+  var prev = editId ? items.find(function(x){return x.id===editId;}) : null;
   var data = {
     cat:$('fCat').value, brand:brand, model:model, origin:$('fOrigin').value.trim(),
+    pl: curPl.slice(),
     buy: $('fBuy').value===''?null:num($('fBuy').value),
     parts: $('fParts').value===''?null:num($('fParts').value),
-    sale: sale===''?null:num(sale),
     ask: $('fAsk').value===''?null:num($('fAsk').value),
-    got:$('fGot').value, sold: sale===''? $('fSold').value : soldDate,
+    sale: sale===''?null:num(sale),
+    got:$('fGot').value,
+    sold: sale==='' ? $('fSold').value : ($('fSold').value || today()),
     notes:$('fNotes').value.trim()
   };
-  if(editId){ ITEMS.doc(editId).update(data); toast('Saved'); }
-  else { data.created = Date.now(); ITEMS.add(data); toast('Added'); }
+  var justSold = sale!=='' && !(prev && isSold(prev));
+  var id = editId || newItemId;
+  data.thumb = formPhotos.length ? formPhotos[0].thumb : null;
+  data.photos = formPhotos.length;
+  if(editId){ ITEMS.doc(id).update(data); }
+  else { data.created = Date.now(); ITEMS.doc(id).set(data); }
+  var base = Date.now();
+  formPhotos.forEach(function(ph,k){
+    if(ph.isNew) PHOTOS.add({item:id, data:ph.data, thumb:ph.thumb, created:base+k});
+  });
+  removedPhotos.forEach(function(pid){ PHOTOS.doc(pid).delete(); });
   closeItem();
+  if(justSold) celebrate(data); else toast(editId?'Saved':'Added');
 };
 $('delBtn').onclick = function(){
-  if(editId && confirm('Delete this machine? This can’t be undone.')){ ITEMS.doc(editId).delete(); toast('Deleted'); closeItem(); }
+  if(editId && confirm('Delete this machine and its photos? This can’t be undone.')){
+    var id = editId;
+    ITEMS.doc(id).delete();
+    PHOTOS.where('item','==',id).get().then(function(snap){ snap.docs.forEach(function(d){ d.ref.delete(); }); });
+    toast('Deleted'); closeItem();
+  }
 };
 $('cancelBtn').onclick = closeItem;
 $('itemBg').onclick = function(e){ if(e.target===this) closeItem(); };
@@ -432,18 +639,162 @@ $('fCat').onchange = refreshBrands;
 $('fBrand').oninput = refreshModels;
 $('addBtn').onclick = function(){ openItem(null); };
 
-// ---------- Categories sheet ----------
+
+// ---------- Photos ----------
+// Photos are shrunk on the phone and saved in Firebase (money_photos), one per record,
+// so they sync to both phones without any extra setup.
+function paintPhotos(){
+  var h = formPhotos.map(function(p,k){
+    return '<div class="ph"><img src="'+(p.thumb||p.data)+'" data-view="'+k+'" alt="Photo '+(k+1)+'">'+
+      (k===0?'<span class="cover">Cover</span>':'')+
+      '<button type="button" class="rm" data-rm="'+k+'" aria-label="Remove photo">✕</button></div>';
+  }).join('');
+  h += '<button type="button" class="addph" id="addPh"><b>+</b>Add photos</button>';
+  $('photoGrid').innerHTML = h;
+}
+function loadImg(file){
+  return new Promise(function(res,rej){
+    var url = URL.createObjectURL(file), im = new Image();
+    im.onload = function(){ res(im); setTimeout(function(){URL.revokeObjectURL(url);},1000); };
+    im.onerror = rej; im.src = url;
+  });
+}
+function shrink(im, max, q){
+  var r = Math.min(1, max/Math.max(im.naturalWidth, im.naturalHeight));
+  var c = document.createElement('canvas');
+  c.width = Math.round(im.naturalWidth*r); c.height = Math.round(im.naturalHeight*r);
+  c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg', q);
+}
+function thumbOf(im){
+  var s = 160, c = document.createElement('canvas'); c.width = c.height = s;
+  var w = im.naturalWidth, h = im.naturalHeight, m = Math.min(w,h);
+  c.getContext('2d').drawImage(im,(w-m)/2,(h-m)/2,m,m,0,0,s,s);
+  return c.toDataURL('image/jpeg',0.6);
+}
+$('photoGrid').onclick = function(e){
+  var t = e.target;
+  if(t.closest('#addPh')){ $('photoIn').click(); return; }
+  if(t.dataset.rm!=null){
+    var k = +t.dataset.rm, p = formPhotos[k];
+    if(p.id) removedPhotos.push(p.id);
+    formPhotos.splice(k,1); paintPhotos(); return;
+  }
+  if(t.dataset.view!=null) openViewer(+t.dataset.view);
+};
+$('photoIn').onchange = function(){
+  var files = Array.prototype.slice.call(this.files||[]); this.value='';
+  if(!files.length) return;
+  toast('Adding '+files.length+' photo'+(files.length>1?'s':'')+'…');
+  files.reduce(function(chain,f){
+    return chain.then(function(){
+      return loadImg(f).then(function(im){
+        var d = shrink(im,1280,0.72);
+        if(d.length>700000) d = shrink(im,1024,0.6);
+        if(d.length>700000) d = shrink(im,800,0.5);
+        formPhotos.push({data:d, thumb:thumbOf(im), isNew:true}); paintPhotos();
+      }).catch(function(){ toast('One photo could not be read'); });
+    });
+  }, Promise.resolve());
+};
+
+// full-screen viewer
+var vAt = 0;
+function showV(){
+  var p = formPhotos[vAt]; if(!p) return;
+  $('vImg').src = p.data; $('vCount').textContent = (vAt+1)+' / '+formPhotos.length;
+  $('vPrev').style.display = $('vNext').style.display = formPhotos.length>1 ? '' : 'none';
+}
+function openViewer(k){ vAt = k; showV(); $('viewer').classList.add('open'); }
+$('vClose').onclick = function(){ $('viewer').classList.remove('open'); };
+$('vPrev').onclick = function(){ vAt = (vAt-1+formPhotos.length)%formPhotos.length; showV(); };
+$('vNext').onclick = function(){ vAt = (vAt+1)%formPhotos.length; showV(); };
+var tx = null;
+$('viewer').addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, {passive:true});
+$('viewer').addEventListener('touchend', function(e){
+  if(tx===null) return; var dx = e.changedTouches[0].clientX - tx; tx = null;
+  if(Math.abs(dx)>50){ (dx<0?$('vNext'):$('vPrev')).click(); }
+});
+
+// ---------- Cash register ----------
+var actx, soundOn = true;
+try { soundOn = localStorage.getItem('ledgerSound') !== 'off'; } catch(e){}
+function ctx(){ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==='suspended') actx.resume(); return actx; }
+function tick(){
+  if(!soundOn) return;
+  try{
+    var a = ctx(), t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+    o.type='triangle'; o.frequency.setValueAtTime(1800,t); o.frequency.exponentialRampToValueAtTime(900,t+0.03);
+    g.gain.setValueAtTime(0.12,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+0.06);
+  }catch(e){}
+}
+document.addEventListener('pointerdown', function(e){ if(e.target.closest('button, .ft, select')) tick(); });
+function paintSound(){ $('soundBtn').textContent = soundOn ? '🔊 Sounds: On' : '🔇 Sounds: Off'; }
+paintSound();
+$('soundBtn').onclick = function(){
+  soundOn = !soundOn; paintSound();
+  try { localStorage.setItem('ledgerSound', soundOn?'on':'off'); } catch(e){}
+};
+function kaChing(){
+  if(!soundOn) return;
+  try{
+    ctx();
+    var t = actx.currentTime;
+    // drawer "ka": short noise burst
+    var len = actx.sampleRate*0.09, buf = actx.createBuffer(1,len,actx.sampleRate), d = buf.getChannelData(0);
+    for(var i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3);
+    var n = actx.createBufferSource(); n.buffer=buf;
+    var nf = actx.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=2500;
+    var ng = actx.createGain(); ng.gain.value=0.6;
+    n.connect(nf); nf.connect(ng); ng.connect(actx.destination); n.start(t);
+    // bell "ching"
+    function bell(f,start,dur,vol){
+      [1,2.76,5.4].forEach(function(h,k){
+        var o=actx.createOscillator(), g=actx.createGain();
+        o.type='sine'; o.frequency.value=f*h;
+        g.gain.setValueAtTime(0.0001,t+start);
+        g.gain.exponentialRampToValueAtTime(vol/(k+1),t+start+0.005);
+        g.gain.exponentialRampToValueAtTime(0.0001,t+start+dur);
+        o.connect(g); g.connect(actx.destination); o.start(t+start); o.stop(t+start+dur+0.05);
+      });
+    }
+    bell(1568,0.10,1.2,0.35); bell(2093,0.17,1.4,0.3);
+    // coins
+    for(var c=0;c<7;c++) bell(3000+Math.random()*1800, 0.35+c*0.06+Math.random()*0.03, 0.18, 0.08);
+  }catch(e){}
+}
+function celebrate(it){
+  kaChing();
+  if(navigator.vibrate) navigator.vibrate([60,40,120]);
+  var p = num(it.sale) - num(it.buy) - num(it.parts);
+  $('partyProfit').textContent = (p>=0?'+':'') + money(p) + ' profit';
+  $('partyProfit').className = 'pr '+(p<0?'loss':'gain');
+  $('partyName').textContent = nameOf(it) + ' sold for ' + money(num(it.sale));
+  var party = $('party');
+  party.querySelectorAll('.coin').forEach(function(c){c.remove();});
+  for(var k=0;k<22;k++){
+    var c=document.createElement('div'); c.className='coin';
+    c.textContent = ['💵','🪙','💰'][k%3];
+    c.style.left = Math.random()*100+'vw';
+    c.style.animationDuration = (1.4+Math.random()*1.4)+'s';
+    c.style.animationDelay = (Math.random()*0.6)+'s';
+    party.appendChild(c);
+  }
+  party.classList.add('show');
+  clearTimeout(celebrate.t);
+  celebrate.t = setTimeout(function(){ party.classList.remove('show'); }, 2800);
+}
+$('party').onclick = function(){ this.classList.remove('show'); };
+
+// ---------- Categories ----------
 function openCats(){
   $('catEdit').innerHTML = cats.map(function(c,k){
-    var n = items.filter(function(i){return i.cat===c.id;}).length;
-    return '<div class="catrow"><button class="mv" data-up="'+c.id+'" aria-label="Move up"'+(k===0?' disabled':'')+'>▲</button><button class="mv" data-down="'+c.id+'" aria-label="Move down"'+(k===cats.length-1?' disabled':'')+'>▼</button><input data-id="'+c.id+'" value="'+esc(c.name)+'"><span class="meta">'+n+'</span><button class="x" data-del="'+c.id+'">Delete</button></div>';
+    var n = items.filter(function(i){return i.cat===c.id && !isSold(i);}).length;
+    return '<div class="catrow"><button class="mv" data-up="'+c.id+'" aria-label="Move up"'+(k===0?' disabled':'')+'>▲</button><button class="mv" data-down="'+c.id+'" aria-label="Move down"'+(k===cats.length-1?' disabled':'')+'>▼</button><span class="dot" style="background:'+catColor(c,k)+'"></span><input data-id="'+c.id+'" value="'+esc(c.name)+'"><span class="meta">'+n+'</span><button class="x" data-del="'+c.id+'">Delete</button></div>';
   }).join('');
   $('catBg').classList.add('open');
 }
-$('catEdit').onchange = function(e){
-  var id = e.target.dataset.id, v = e.target.value.trim();
-  if(id && v){ CATS.doc(id).update({name:v}); toast('Renamed'); }
-};
 function moveCat(id,dir){
   var arr = cats.slice(), k = arr.findIndex(function(c){return c.id===id;}), j = k+dir;
   if(k<0||j<0||j>=arr.length) return;
@@ -451,9 +802,13 @@ function moveCat(id,dir){
   var b = db.batch();
   arr.forEach(function(c,i){ b.update(CATS.doc(c.id),{order:i}); });
   cats = arr.map(function(c,i){ c.order=i; return c; });
-  renderCats(); render(); openCats();
+  renderTabs(); render(); openCats();
   b.commit();
 }
+$('catEdit').onchange = function(e){
+  var id = e.target.dataset.id, v = e.target.value.trim();
+  if(id && v){ CATS.doc(id).update({name:v}); toast('Renamed'); }
+};
 $('catEdit').onclick = function(e){
   var bt = e.target.closest('button'); if(!bt) return;
   if(bt.dataset.up){ moveCat(bt.dataset.up,-1); return; }
@@ -467,7 +822,7 @@ $('catEdit').onclick = function(e){
   var b = db.batch();
   inIt.forEach(function(i){ b.update(ITEMS.doc(i.id),{cat:other.id}); });
   b.delete(CATS.doc(id));
-  b.commit().then(function(){ if(fCatSel===id) fCatSel='all'; setTimeout(openCats,50); toast('Deleted'); });
+  b.commit().then(function(){ if(tab===id) tab='all'; setTimeout(openCats,50); toast('Deleted'); });
 };
 $('addCat').onclick = function(){
   var v = $('newCat').value.trim(); if(!v) return;
@@ -475,30 +830,24 @@ $('addCat').onclick = function(){
 };
 $('catDone').onclick = function(){ $('catBg').classList.remove('open'); };
 $('catBg').onclick = function(e){ if(e.target===this) this.classList.remove('open'); };
+$('catBtn').onclick = openCats;
 
 $('exportBtn').onclick = function(){
-  var rows = [['Category','Brand','Model','Origin','Purchase price','Parts expenditure','Asking price','Sale price','Profit','Date acquired','Date sold','Notes']];
+  var rows = [['Category','Brand','Model','Origin','Listed on','Purchase price','Parts expenditure','Asking price','Sale price','Profit','Date acquired','Date sold','Notes']];
   items.forEach(function(i){
-    rows.push([catName(i.cat),i.brand,i.model,i.origin,i.buy,i.parts,i.ask,i.sale,isSold(i)?profitOf(i).toFixed(2):'',i.got,i.sold,i.notes]);
+    rows.push([catName(i.cat),i.brand,i.model,i.origin,(i.pl||[]).map(function(k){return PL[k]||k;}).join(' / '),i.buy,i.parts,i.ask,i.sale,isSold(i)?profitOf(i).toFixed(2):'',i.got,i.sold,i.notes]);
   });
   var csv = rows.map(function(r){ return r.map(function(v){ v = v==null?'':String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(','); }).join('\n');
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  a.download = 'machine-money-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download = 'bobshop-'+today()+'.csv';
   document.body.appendChild(a); a.click(); a.remove();
 };
 
-// ---------- Filters ----------
-$('cats').onclick = function(e){
-  var c = e.target.dataset.c; if(!c) return;
-  if(c==='edit'){ openCats(); return; }
-  fCatSel = c; renderCats(); render();
-};
-$('statusChips').onclick = function(e){
-  var s = e.target.dataset.s; if(!s) return;
-  fStatus = s;
-  Array.prototype.forEach.call(this.children,function(b){ b.classList.toggle('on', b.dataset.s===s); });
-  render();
+// ---------- Tabs & search ----------
+$('tabs').onclick = function(e){
+  var t = e.target.closest('[data-t]'); if(!t) return;
+  tab = t.dataset.t; renderTabs(); render();
 };
 $('q').oninput = render;
 $('list').onclick = function(e){ var b = e.target.closest('.item'); if(b) openItem(b.dataset.id); };

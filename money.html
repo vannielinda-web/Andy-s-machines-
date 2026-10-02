@@ -644,9 +644,13 @@ $('delBtn').onclick = function(){
 };
 $('restockBtn').onclick = function(){
   if(!editId || !confirm('Return this machine to stock? This removes the sale price and date sold.')) return;
+  var it = items.find(function(x){return x.id===editId;}) || {};
   ITEMS.doc(editId).update({sale:null, sold:''});
   sadTrombone();
-  closeItem(); toast('😢 Back in stock');
+  closeItem();
+  showParty({title:'BACK IN STOCK', color:'#64748b', tint:'rgba(71,85,105,.3)',
+    line1:'😢 Sale removed', line2:nameOf(it) + ' is back in the shop',
+    emojis:['😢','😭','🥺','😞'], ms:3200});
 };
 $('cancelBtn').onclick = closeItem;
 $('itemBg').onclick = function(e){ if(e.target===this) closeItem(); };
@@ -846,7 +850,7 @@ function showParty(o){
   }
   party.classList.add('show');
   clearTimeout(showParty.t);
-  showParty.t = setTimeout(function(){ party.classList.remove('show'); }, 2800);
+  showParty.t = setTimeout(function(){ party.classList.remove('show'); }, o.ms || 2800);
 }
 function celebrate(it){
   kaChing();

@@ -1,6 +1,6 @@
 {
-  "name": "Labor Report",
-  "short_name": "Labor Report",
+  "name": "Labor Ledger",
+  "short_name": "Labor Ledger",
   "start_url": "jobs.html",
   "scope": "./",
   "display": "standalone",

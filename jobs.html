@@ -6,11 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#ff5a1f">
-<title>Labor Report</title>
+<title>Labor Ledger</title>
 <link rel="manifest" href="jobs-manifest.json">
 <link rel="icon" href="jobs-icon-192.png">
 <link rel="apple-touch-icon" href="jobs-icon-192.png">
-<meta name="apple-mobile-web-app-title" content="Labor Report">
+<meta name="apple-mobile-web-app-title" content="Labor Ledger">
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <style>
@@ -132,7 +132,7 @@ textarea.field{min-height:70px;resize:vertical}
 <body>
 
 <div class="hdr">
-  <h1>🔧 Labor Report</h1>
+  <h1>🔧 Labor Ledger</h1>
   <div class="hdr-r">
     <button class="hdr-btn" id="soundBtn">🔊</button>
     <button class="hdr-btn" id="csvBtn">⬇ Export</button>
@@ -146,7 +146,7 @@ textarea.field{min-height:70px;resize:vertical}
   <div class="st"><div class="sn" id="sHours">0 / 0</div><div class="sl">Actual / book hours</div></div>
   <div class="st"><div class="sn g" id="sMade">$0</div><div class="sl">Profit</div></div>
 </div>
-<div class="subline" id="sSub">Charged $0 · Parts &amp; supplies $0</div>
+<div class="subline" id="sSub">Billed $0 · Parts &amp; supplies $0</div>
 
 <div class="ftabs" id="tabs">
   <button class="ft on" data-f="all">All</button>
@@ -190,7 +190,7 @@ textarea.field{min-height:70px;resize:vertical}
       <div><label for="fRate">Rate per hour ($)</label><input class="field" id="fRate" type="number" inputmode="decimal" step="1" min="0" placeholder="0"></div>
       <div><label for="fTools">Parts &amp; supplies ($)</label><input class="field" id="fTools" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
     </div>
-    <label for="fTotal">Total charged ($)</label>
+    <label for="fTotal">Total billed ($)</label>
     <input class="field" id="fTotal" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0">
     <div class="small" id="fAuto">Fills in by itself (book hours × rate + parts &amp; supplies). You can change it.</div>
     <div class="calc"><div><div class="l">Labor</div><div id="cLabor" style="font-weight:600">$0</div></div><div style="text-align:right"><div class="l">Total</div><div class="p" id="cTotal">$0</div></div></div>
@@ -491,7 +491,7 @@ function render(){
   $('sJobs').textContent = shown.length;
   $('sHours').textContent = hrs(tw) + ' / ' + hrs(tc);
   $('sMade').textContent = money(Math.round(made));
-    $('sSub').textContent = 'Charged ' + money(tm) + ' · Parts & supplies ' + money(tt);
+    $('sSub').textContent = 'Billed ' + money(tm) + ' · Parts & supplies ' + money(tt);
   $('hint').textContent = q ? shown.length + (shown.length===1?' job found':' jobs found') : '';
 
   if(!jobs.length){ $('list').innerHTML = '<div class="empty">No jobs yet.<br>Tap <b>+ Add</b> to log the first one.</div>'; return; }
@@ -634,7 +634,7 @@ $('cfYes').onclick = function(){
 
 // ---------- Export (whatever is showing now) ----------
 $('csvBtn').onclick = function(){
-  var rows = [['Date','Customer','Brand','Type','Model','Work requested','Work performed','Actual hours','Book hours','Rate','Parts & supplies','Total charged','Profit']];
+  var rows = [['Date','Customer','Brand','Type','Model','Work requested','Work performed','Actual hours','Book hours','Rate','Parts & supplies','Total billed','Profit']];
   var q = $('q').value.trim().toLowerCase(), words = q ? q.split(/\s+/) : [];
   jobs.filter(inFilter).filter(function(j){ var h=haystack(j); return words.every(function(w){ return h.indexOf(w.replace(/^\$/,''))>-1; }); })
     .sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); })

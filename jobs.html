@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ff5a1f">
+<title>Andy's Jobs</title>
+<link rel="manifest" href="jobs-manifest.json">
+<link rel="icon" href="jobs-icon-192.png">
+<link rel="apple-touch-icon" href="jobs-icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Andy's Jobs">
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --navy:#ff5a1f; --hot:#ff2d78; --blue:#2563eb; --purple:#8b5cf6; --teal:#0ea5a4; --bg:#fff7ed; --card:#fff; --ink:#1a202c; --muted:#64748b; --line:#e2e8f0;
+  --gain:#166534; --gainbg:#dcfce7; --loss:#991b1b; --lossbg:#fee2e2;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{padding-bottom:40px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
+.hdr{background:linear-gradient(120deg,#ff8a00 0%,#ff5a1f 45%,#ff2d78 100%);color:#fff;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hdr h1{font-size:19px;font-weight:700}
+.hdr-r{display:flex;gap:6px}
+.hdr-btn{background:rgba(255,255,255,.22);border:none;color:#fff;font-size:12px;font-weight:600;padding:8px 11px;border-radius:8px}
+.hdr-btn.add{background:#fff;color:var(--hot);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.sync{text-align:center;padding:6px;font-size:12px;font-weight:600;background:var(--gainbg);color:var(--gain)}
+.sync.saving{background:#fef9c3;color:#854d0e}
+.sync.error{background:var(--lossbg);color:var(--loss)}
+.sbar{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:10px 10px 4px}
+.st{border-radius:12px;padding:8px 2px;color:#fff}
+.st:nth-child(1){background:linear-gradient(135deg,#3b82f6,#2563eb)}
+.st:nth-child(2){background:linear-gradient(135deg,#a78bfa,#7c3aed)}
+.st:nth-child(3){background:linear-gradient(135deg,#4ade80,#16a34a)}
+.st:nth-child(4){background:linear-gradient(135deg,#2dd4bf,#0d9488)}
+.sbar .st:nth-child(3) .sn{font-size:19px}
+.subline{text-align:center;font-size:12px;font-weight:600;color:#9a3412;padding:4px 0 0}
+.st{text-align:center}
+.sn{font-size:17px;font-weight:800;color:#fff}
+.sn.g{color:#fff}
+.sl{font-size:9.5px;line-height:1.15;color:rgba(255,255,255,.9);font-weight:600;text-transform:uppercase;margin-top:1px}
+.ftabs{display:flex;gap:6px;padding:8px 10px 2px;overflow-x:auto}
+.ft{flex-shrink:0;padding:8px 14px;font-size:13px;font-weight:600;color:#9a3412;border:none;background:#ffedd5;border-radius:20px;white-space:nowrap}
+.ft.on{color:#fff;background:linear-gradient(120deg,#ff8a00,#ff2d78);box-shadow:0 2px 8px rgba(255,45,120,.3)}
+.sw{position:relative;padding:12px 12px 4px}
+.sw svg{position:absolute;left:24px;top:calc(50% + 4px);transform:translateY(-50%);color:var(--muted)}
+.search{width:100%;padding:11px 36px 11px 36px;border:2px solid #fed7aa;border-radius:9px;background:#fff;font-size:15px;outline:none}
+.search:focus{border-color:var(--navy)}
+.clr{position:absolute;right:20px;top:calc(50% + 4px);transform:translateY(-50%);border:none;background:#e2e8f0;width:24px;height:24px;border-radius:50%;font-size:13px;color:var(--muted);display:none}
+.hint{font-size:12px;color:var(--muted);padding:2px 14px 0}
+.wrap{padding:6px 12px}
+.mhd{font-size:12px;font-weight:800;color:#fff;text-transform:uppercase;margin:14px 0 8px;padding:7px 12px;border-radius:10px;display:flex;justify-content:space-between;background:linear-gradient(120deg,var(--purple),var(--blue))}
+.item{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-left:6px solid var(--tc,#ff5a1f);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.05);padding:12px 13px;margin-bottom:8px}
+.row1{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.item h3{font-size:15px;font-weight:600}
+.meta{font-size:12px;color:var(--muted);margin-top:2px}
+.req{font-size:13px;margin-top:6px;color:#334155}
+.req b{color:var(--tc,#ff5a1f);font-weight:700}
+.money{text-align:right;flex-shrink:0}
+.money .p{font-size:19px;font-weight:800;color:#16a34a}
+.tag{display:inline-block;font-size:11px;font-weight:700;color:#fff;background:var(--tc,#ff5a1f);padding:2px 8px;border-radius:10px;margin-bottom:4px}
+.money .s{font-size:11px;color:var(--muted)}
+mark{background:#fef08a;border-radius:3px;padding:0 1px}
+.empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:14px}
+.totalbar{display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px;padding:13px 14px;border-radius:11px;background:linear-gradient(120deg,#22c55e,#0d9488);color:#fff;font-weight:600}
+.ov{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.ov.show{display:flex}
+.sheet{background:#fff;width:100%;max-width:560px;max-height:94vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom,0px))}
+@media(min-width:600px){.ov{align-items:center}.sheet{border-radius:18px}}
+.sheet h2{font-size:20px;font-weight:800;color:var(--hot);margin-bottom:12px}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:11px 0 4px}
+.field{width:100%;padding:10px 11px;border:1.5px solid var(--line);border-radius:9px;background:#f8fafc;font-size:15px;outline:none}
+.field:focus{border-color:var(--navy);background:#fff}
+textarea.field{min-height:70px;resize:vertical}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 10px}
+.calc{margin-top:14px;padding:12px;border-radius:12px;background:linear-gradient(120deg,#dcfce7,#ccfbf1);display:flex;justify-content:space-between;align-items:center}
+.calc .l{font-size:12px;color:var(--muted)}
+.calc .p{font-size:22px;font-weight:800;color:#16a34a}
+.btns{display:flex;gap:8px;margin-top:16px}
+.btn{flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:600;font-size:15px}
+.btn.main{background:linear-gradient(120deg,#ff8a00,#ff2d78);color:#fff;border-color:transparent}
+.btn.del{color:var(--loss);border-color:#fecaca;background:#fff5f5}
+.small{font-size:11px;color:var(--muted);margin-top:3px}
+.pop{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%) scale(.6);background:linear-gradient(135deg,#ff8a00,#ff2d78 60%,#8b5cf6);color:#fff;font-size:34px;font-weight:800;padding:22px 34px;border-radius:20px;z-index:90;opacity:0;pointer-events:none;transition:all .25s;box-shadow:0 10px 40px rgba(0,0,0,.3);text-align:center}
+.pop.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.pop small{display:block;font-size:14px;font-weight:600;opacity:.85;margin-top:4px}
+.cf{background:#fff;border-radius:16px;padding:20px;max-width:340px;width:90%;align-self:center;text-align:center}
+.cf p{margin:6px 0 16px;color:var(--muted);font-size:14px}
+.layoutbar{display:flex;align-items:center;gap:5px;padding:8px 12px 0;font-size:12px;color:var(--muted);font-weight:600}
+.lo{border:1.5px solid #fed7aa;background:#fff;color:#9a3412;border-radius:16px;padding:4px 10px;font-size:12px;font-weight:700}
+.lo.on{background:#1a202c;border-color:#1a202c;color:#fff}
+/* B rows */
+.rowb{background:#fff;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden}
+.rb{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:none;background:none;padding:10px}
+.dblk{width:50px;height:54px;border-radius:10px;color:#fff;background:var(--tc);text-align:center;font-weight:800;line-height:1.05;padding-top:7px;flex-shrink:0}
+.dblk small{font-size:11px;display:block}.dblk span{font-size:22px}
+.rm{flex:1;min-width:0}.rm h3{font-size:15px;font-weight:600}.rm p{font-size:12px;color:var(--muted);margin-top:2px}
+.amt{font-weight:800;font-size:18px;color:#16a34a;text-align:right;flex-shrink:0}.amt small{display:block;font-size:11px;color:var(--muted);font-weight:500}
+.rdet{padding:0 14px 12px 72px}.rdet .req{margin-top:4px}
+.item.editb{display:inline-block;width:auto;border:1.5px solid var(--tc);border-left-width:1.5px;color:var(--tc);font-weight:700;font-size:13px;padding:6px 14px;margin:8px 0 0;box-shadow:none}
+/* C tiles */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.item.tile{border:none;border-top:6px solid var(--tc);border-radius:16px;padding:12px;margin:0}
+.tile .ic{font-size:26px}.tile h3{font-size:14px;margin-top:4px}.tile p{font-size:11px;color:var(--muted);margin-top:2px}
+.tile .cl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:#334155}
+.tile .a{font-size:20px;font-weight:900;color:#16a34a;margin-top:6px}
+.bnav{display:none}
+.lay-C .bnav{display:flex;position:fixed;bottom:0;left:0;right:0;height:calc(64px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:#fff;justify-content:space-around;align-items:center;box-shadow:0 -2px 10px rgba(0,0,0,.08);z-index:40}
+.bnav button{border:none;background:none;font-size:11px;color:var(--muted);line-height:1.3;width:58px}
+.bnav .bplus{width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,#ff8a00,#ff2d78);color:#fff;font-size:34px;margin-top:-30px;box-shadow:0 4px 14px rgba(255,45,120,.45)}
+.lay-C{padding-bottom:100px}
+.lay-C #addBtn,.lay-C #csvBtn{display:none}
+/* D timeline */
+.tl{position:relative;padding-left:34px;margin-top:6px}
+.tl:before{content:"";position:absolute;left:13px;top:0;bottom:0;width:4px;border-radius:2px;background:linear-gradient(#ff8a00,#ff2d78,#8b5cf6,#2563eb)}
+.mon{position:relative;margin:12px 0 8px -22px;display:inline-block;background:#1a202c;color:#fff;font-weight:800;font-size:12px;padding:6px 12px;border-radius:20px}
+.item.ev{position:relative;border:none;border-radius:14px;margin-bottom:10px}
+.item.ev:before{content:"";position:absolute;left:-29px;top:14px;width:16px;height:16px;border-radius:50%;background:var(--tc);border:3px solid var(--bg)}
+.ev .dt{font-size:12px;font-weight:800;color:var(--tc)}.ev h3{font-size:15px;margin-top:1px}.ev .a{font-size:18px;font-weight:900;color:#16a34a}
+.ev .ln{font-size:13px;color:#334155;margin-top:4px}.ev .ln b{color:var(--tc);font-weight:700}
+.pl.prof{background:#dcfce7;color:#166534}
+.layoutbar{display:none!important}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.pl{font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;background:#f1f5f9;color:#475569}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>🔧 Andy's Jobs</h1>
+  <div class="hdr-r">
+    <button class="hdr-btn" id="soundBtn">🔊</button>
+    <button class="hdr-btn" id="csvBtn">⬇ Export</button>
+    <button class="hdr-btn add" id="addBtn">+ Add</button>
+  </div>
+</div>
+<div class="sync" id="sync">Connecting…</div>
+
+<div class="sbar">
+  <div class="st"><div class="sn" id="sJobs">0</div><div class="sl">Jobs</div></div>
+  <div class="st"><div class="sn" id="sHours">0 / 0</div><div class="sl">Actual / book hours</div></div>
+  <div class="st"><div class="sn g" id="sMade">$0</div><div class="sl">Profit</div></div>
+  <div class="st"><div class="sn" id="sRate">–</div><div class="sl">Per hour</div></div>
+</div>
+<div class="subline" id="sSub">Charged $0 · Parts &amp; supplies $0</div>
+
+<div class="ftabs" id="tabs">
+  <button class="ft on" data-f="all">All</button>
+  <button class="ft" data-f="month">This month</button>
+  <button class="ft" data-f="last">Last month</button>
+  <button class="ft" data-f="year">This year</button>
+</div>
+
+<div class="sw">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+  <input class="search" id="q" type="search" placeholder="Search anything: date, machine, customer, work…" autocomplete="off">
+  <button class="clr" id="clr" aria-label="Clear search">✕</button>
+</div>
+<div class="hint" id="hint"></div>
+<div class="layoutbar" id="layoutBar"><span>Layout:</span><button class="lo" data-l="A">Cards</button><button class="lo" data-l="B">Rows</button><button class="lo" data-l="C">Tiles</button><button class="lo" data-l="D">Timeline</button></div>
+
+<div class="wrap" id="list"></div>
+
+<!-- Add / edit -->
+<div class="ov" id="ov">
+  <div class="sheet">
+    <h2 id="fTitle">New job</h2>
+    <div class="g2">
+      <div><label for="fDate">Date</label><input class="field" id="fDate" type="date"></div>
+      <div><label for="fCust">Customer</label><input class="field" id="fCust" list="custList" placeholder="Name (optional)"></div>
+    </div>
+    <div class="g3">
+      <div><label for="fBrand">Brand</label><input class="field" id="fBrand" list="brandList" placeholder="Stihl"></div>
+      <div><label for="fType">Type</label><input class="field" id="fType" list="typeList" placeholder="Chainsaw"></div>
+      <div><label for="fModel">Model</label><input class="field" id="fModel" list="modelList" placeholder="MS 250"></div>
+    </div>
+    <label for="fReq">Work requested</label>
+    <textarea class="field" id="fReq" placeholder="Won't start, runs rough…"></textarea>
+    <label for="fDone">Work performed</label>
+    <textarea class="field" id="fDone" placeholder="Cleaned carb, new fuel line, new plug…"></textarea>
+    <div class="g2">
+      <div><label for="fHc">Book hours</label><input class="field" id="fHc" type="number" inputmode="decimal" step="0.25" min="0" placeholder="0"></div>
+      <div><label for="fHw">Actual hours</label><input class="field" id="fHw" type="number" inputmode="decimal" step="0.25" min="0" placeholder="0"></div>
+    </div>
+    <div class="g2">
+      <div><label for="fRate">Rate per hour ($)</label><input class="field" id="fRate" type="number" inputmode="decimal" step="1" min="0" placeholder="0"></div>
+      <div><label for="fTools">Parts &amp; supplies ($)</label><input class="field" id="fTools" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+    </div>
+    <label for="fTotal">Total charged ($)</label>
+    <input class="field" id="fTotal" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0">
+    <div class="small" id="fAuto">Fills in by itself (book hours × rate + parts &amp; supplies). You can change it.</div>
+    <div class="calc"><div><div class="l">Labor</div><div id="cLabor" style="font-weight:600">$0</div></div><div style="text-align:right"><div class="l">Total</div><div class="p" id="cTotal">$0</div></div></div>
+    <div class="btns">
+      <button class="btn" id="cancelBtn">Cancel</button>
+      <button class="btn main" id="saveBtn">Save</button>
+    </div>
+    <button class="btn del" id="delBtn" style="width:100%;margin-top:10px;display:none">🗑 Delete this job</button>
+  </div>
+</div>
+
+<div class="ov" id="cfOv"><div class="cf"><h2 style="color:var(--loss);font-size:18px">Delete this job?</h2><p>This can't be undone.</p><div class="btns" style="margin-top:0"><button class="btn" id="cfNo">Keep it</button><button class="btn del" id="cfYes">Delete</button></div></div></div>
+
+<div class="pop" id="pop"></div>
+<div class="bnav"><button id="nJobs">📋<br>Jobs</button><button id="nSearch">🔍<br>Search</button><button class="bplus" id="nAdd">+</button><button id="nCsv">⬇<br>Export</button><button id="nSound">🔊<br>Sound</button></div>
+
+<datalist id="brandList"></datalist>
+<datalist id="typeList"></datalist>
+<datalist id="modelList"></datalist>
+<datalist id="custList"></datalist>
+
+<script>
+function $(id){ return document.getElementById(id); }
+var firebaseConfig = {
+  apiKey: "AIzaSyA9S6Fs7TeAvJnMXGCjY6y8MZC9fCKXXpw",
+  authDomain: "andys-inventory.firebaseapp.com",
+  projectId: "andys-inventory",
+  storageBucket: "andys-inventory.firebasestorage.app",
+  messagingSenderId: "944013049347",
+  appId: "1:944013049347:web:0605171960c47dcc1b1836"
+};
+if(typeof firebase==='undefined'){
+  $('sync').textContent='⚠ Not connected'; $('sync').className='sync error';
+  $('list').innerHTML='<div class="empty">Can’t reach the database. Check the internet and reload. (The Claude preview blocks it. It works from the GitHub link.)</div>';
+  throw new Error('Firebase did not load');
+}
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+try { db.enablePersistence({synchronizeTabs:true}).catch(function(){}); } catch(e){}
+// Its own collection. This app never touches inventory, categories or any money_ collection.
+var JOBS = db.collection('jobs');
+
+// Brand -> type -> models (same list as Bobshop)
+var MODELS = {
+"Stihl":{
+ "Chainsaw":["009","010","011","012","015","017","018","019T","020","021","023","024","025","026","028","029","030","031","032","034","036","038","039","041","042","044","045","046","048","050","051","056","064","066","070","075","076","084","088","090","MS 150","MS 162","MS 170","MS 171","MS 180","MS 181","MS 192T","MS 193T","MS 194T","MS 200T","MS 201T","MS 210","MS 211","MS 230","MS 231","MS 250","MS 251","MS 260","MS 261","MS 270","MS 271","MS 280","MS 290","MS 291","MS 310","MS 311","MS 341","MS 361","MS 362","MS 390","MS 391","MS 400","MS 440","MS 441","MS 460","MS 461","MS 462","MS 500i","MS 650","MS 660","MS 661","MS 880","MSA 120","MSA 140","MSA 160","MSA 200","MSA 220","MSA 300"],
+ "Cut-off saw":["TS 350","TS 360","TS 400","TS 410","TS 420","TS 460","TS 500i","TS 510","TS 700","TS 760","TS 800"],
+ "Trimmer":["FS 38","FS 40","FS 45","FS 46","FS 50","FS 55","FS 56","FS 70","FS 80","FS 85","FS 87","FS 90","FS 91","FS 94","FS 100","FS 110","FS 111","FS 120","FS 130","FS 131","FS 200","FS 240","FS 250","FS 260","FS 310","FS 350","FS 360","FS 400","FS 410","FS 450","FS 460","FS 480","FS 490","FS 560","FSA 57","FSA 60","FSA 86","FSA 90","FSA 130","KM 56","KM 90","KM 91","KM 94","KM 110","KM 111","KM 130","KM 131"],
+ "Edger":["FC 55","FC 56","FC 75","FC 90","FC 91","FC 95","FC 96","FC 110","FC 111"],
+ "Hedge trimmer":["HS 45","HS 46","HS 56","HS 75","HS 80","HS 81","HS 82","HS 85","HS 86","HS 87","HSA 56","HSA 86","HL 90","HL 91","HL 94","HL 100","HL 135","HLA 56","HLA 85"],
+ "Pole saw":["HT 56","HT 75","HT 100","HT 101","HT 103","HT 131","HT 133","HT 135","HTA 85"],
+ "Blower":["BG 45","BG 50","BG 55","BG 56","BG 65","BG 75","BG 85","BG 86","BGA 56","BGA 86","BR 200","BR 320","BR 340","BR 350","BR 380","BR 400","BR 420","BR 430","BR 450","BR 500","BR 550","BR 600","BR 700","BR 800","SH 56","SH 86"],
+ "Other":["BT 45","BT 121","BT 131","SR 200","SR 420","SR 430","SR 450","MM 55","MM 56","RE 90","RE 100","RE 110","RE 130"]
+},
+"Husqvarna":{
+ "Chainsaw":["23","33","36","41","42","44","50","51","55","61","65","66","77","120 Mark II","130","135","140","162","181","235","236","240","266","268","272XP","281XP","288XP","340","345","346XP","350","353","357XP","359","362XP","365","371XP","372XP","385XP","390XP","395XP","435","440","445","450","455 Rancher","460 Rancher","543XP","545","550XP","555","560XP","562XP","565","572XP","585","592XP","3120XP","120i","330i","340i","535i XP","540i XP","T525","T540XP"],
+ "Cut-off saw":["K650","K750","K760","K770","K970","K1270"],
+ "Trimmer":["128C","128LD","129C","129L","129LK","223L","324L","325L","525L","525LST","525RX","535LS","545RX","555FX","115iL","520iLX"],
+ "Hedge trimmer":["122HD60","226HD60","522HDR60","525HE3"],
+ "Blower":["125B","125BVx","150BT","350BT","360BT","370BTS","380BTS","525BX","530BT","570BTS","580BTS"],
+ "Mower":["LC121P","LC221A","HU700F","YTH18542","YTH24V48","TS 348","Z254","MZ54","Automower 315","Automower 430X"]
+},
+"Redmax":{
+ "Blower":["EB4300","EB7001","EBZ5100","EBZ5150","EBZ7500RH","EBZ8500RH","EBZ8550","EBZ9000","HB260"],
+ "Trimmer":["BCZ2460S","BCZ2610","BCZ260TS","BCZ2650S","BCZ3000","TR2350S"],
+ "Edger":["LE230","LE2300"],
+ "Hedge trimmer":["CHTZ2401","CHTZ2600"],
+ "Chainsaw":["GZ4000","GZ7000"]
+},
+"Echo":{
+ "Chainsaw":["CS-271T","CS-280","CS-300","CS-303T","CS-306","CS-310","CS-341","CS-346","CS-352","CS-355T","CS-361P","CS-370","CS-400","CS-440","CS-450P","CS-490","CS-500P","CS-501P","CS-510","CS-530","CS-590 Timberwolf","CS-600P","CS-620P","CS-680","CS-7310P","CS-8000"],
+ "Trimmer":["GT-200","GT-225","GT-230","GT-2000","SRM-210","SRM-225","SRM-230","SRM-2100","SRM-2620","SRM-266","SRM-280","SRM-3020","SRM-410","PAS-225","PAS-266"],
+ "Edger":["PE-225","PE-266","PE-2620"],
+ "Hedge trimmer":["HC-150","HC-152","HC-155","HCA-266"],
+ "Pole saw":["PPT-266","PPT-280"],
+ "Blower":["PB-250","PB-251","PB-255","PB-265L","PB-403T","PB-413T","PB-460LN","PB-500T","PB-580T","PB-620","PB-650","PB-750T","PB-755ST","PB-760LNT","PB-770T","PB-8010T","PB-9010T"],
+ "Other":["MS-53BH"]
+},
+"Shindaiwa":{
+ "Trimmer":["T222","T235","T242","T262","T282","T302","T344","C35","C344","C350"],
+ "Edger":["EB212","LE242"],
+ "Blower":["EB600RT","EB630","EB633RT","EB802","EB810","EB854","EB8520"],
+ "Hedge trimmer":["DH231","DH232","HT230","AH230"],
+ "Pole saw":["P230","P231"],
+ "Chainsaw":["360","377","416","488","577"]
+},
+"Jonsered":{
+ "Chainsaw":["370","451","490","510","520","535","590","621","625","630","670 Champ","690","820","830","910","920","2041","2045","2050","2051","2054","2055","2063","2065","2071","2077","2083","2094","2141","2145","2149","2150","2152","2153","2156","2159","2163","2165","2171","2186","2188","CS2234","CS2238","CS2240","CS2245","CS2250","CS2252","CS2253","CS2255","CS2258","CS2260"],
+ "Trimmer":["GR2032","GR2126","GR2128"]
+},
+"Makita":{
+ "Chainsaw":["EA3200S","EA3201S","EA3202S","EA3500S","EA3501S","EA4300F","EA5000P","EA5100P","EA6100P","EA7300P","EA7900P","DCS340","DCS3410","DCS4300","DCS4610","DCS5000","DCS5030","DCS5121","DCS6000","DCS6401","DCS6421","DCS7301","DCS7901","DCS9010","XCU02","XCU03","XCU04","XCU06","XCU08","XCU11"],
+ "Cut-off saw":["EK6100","EK7651","DPC6430","DPC7311"],
+ "Blower":["EB5300TH","EB7650TH","EB7660TH","BHX2501","XBU02"],
+ "Trimmer":["EM2650LH","XRU15"],
+ "Hedge trimmer":["XHU02"],
+ "Mower":["XML03","XML08"]
+},
+"Dolmar":{
+ "Chainsaw":["109","111","112","115","116","117","119","120","123","133","143","153","PS-33","PS-34","PS-340","PS-341","PS-400","PS-401","PS-420","PS-460","PS-4600","PS-500","PS-5000","PS-510","PS-5100","PS-5105","PS-540","PS-6000","PS-6100","PS-7300","PS-7900","PS-9010"],
+ "Cut-off saw":["PC-6412","PC-7314","PC-7414"]
+},
+"Little Wonder":{
+ "Blower":["Optimax","Pro Blower 9 HP","Pro Blower 13 HP","Pro Blower 18 HP"],
+ "Vacuum":["Pro Vac SI","Truckloader"],
+ "Edger":["Bed Redefiner","Edger"],
+ "Hedge trimmer":["Hedge Trimmer 24\"","Hedge Trimmer 30\""]
+},
+"Scag":{
+ "Mower":["Turf Tiger","Turf Tiger II","Tiger Cat","Tiger Cat II","Cheetah","Cheetah II","Patriot","Freedom Z","Liberty Z","V-Ride","V-Ride II","SW walk-behind","SWZ","SWZU","SFZ"]
+},
+"Giant Vac":{
+ "Vacuum":["Lawn Vacuum","Truck Loader","Leaf Loader","Chipper Vac"],
+ "Blower":["Walk-Behind Blower"]
+},
+"Wacker Neuson":{
+ "Compactor":["BS50-2","BS60-2","BS50-4","BS60-4","BS65-V","BS70-2","WP1540","WP1550","VP1550","VP2050","VPR1750","BPU2540","BPU3050","DPU2550","DPU3050","DPU4045","DPU6555","RTx-SC3"]
+},
+"Honda":{
+ "Generator":["EU1000i","EU2000i","EU2200i","EU3000is","EU3200i","EU7000is","EB2800i","EB3000c","EB5000","EB6500","EB10000","EM5000","EM6500"],
+ "Mower":["HRB217","HRC216","HRN216","HRR216","HRS216","HRT216","HRX217"],
+ "Pump":["WB20","WB30","WMP20","WT20","WT30","WT40","WX10","WX15"],
+ "Engine":["GX35","GX100","GX120","GX160","GX200","GX240","GX270","GX340","GX390","GX630","GX690","GC160","GCV160","GCV170","GCV190","GCV200"],
+ "Tiller":["FG110","FC600","FRC800"],
+ "Snowblower":["HS520","HS720","HS724","HSS724","HSS928","HSS1332"],
+ "Trimmer":["HHT25S","HHT35S","UMK425"]
+},
+"Mi-T-M":{
+ "Pressure washer":["CW-2700","CW-3000","CW-3004","CW-3005","CW-3006","CW-3200","CW-3504","CW-4004"],
+ "Generator":["GEN-3500","GEN-6000","GEN-8000"]
+},
+"Shark":{
+ "Pressure washer":["DP series (direct drive)","BR series (belt drive)","SG series (hot water)","SGP series (hot water)"]
+},
+"Karcher":{
+ "Pressure washer":["K1700","K1800","K2000","K2010","G2700","G2800","G3000","G3200","G4000","HD 2.7","HD 3.5/30","HD 4.0/40","HDS 3.5/30"]
+},
+"Mikasa":{
+ "Compactor":["MT-55","MT-65H","MTX-60","MTX-70","MVC-50","MVC-64","MVC-82","MVC-88","MVH-306","MVH-406"]
+},
+"Multiquip":{
+ "Compactor":["MTX60","MTX70","MVC64","MVC82","MVC88"],
+ "Generator":["DCA-25","DCA-45","DCA-70","GA-2900","GA-3.6","GA-6"],
+ "Pump":["QP2","QP3","QP4"],
+ "Other":["MC-64 mixer","WM70 mixer"]
+},
+"Billy Goat":{
+ "Vacuum":["KV600","KV650","MV600","MV650","TKV650","DL1302","DL1801","DL1802"],
+ "Blower":["F902","F1302","F1802","P1302","X3000"],
+ "Aerator":["AE401","AE402","PL1800"],
+ "Other":["SC121 sod cutter","SC181 sod cutter","OS552 overseeder","OS901 overseeder","BC2600 brushcutter"]
+},
+"Mantis":{
+ "Tiller":["7920 (2-cycle)","7940 (4-cycle Honda)","7222","7225","7250 (electric)","7262"]
+},
+"Yamaha":{
+ "Generator":["EF1000iS","EF2000iS","EF2000iSv2","EF2200iS","EF2400iSHC","EF3000iS","EF3000iSE","EF3000iSEB","EF4500iSE","EF5500DE","EF6300iSDE","EF7200DE"],
+ "Pump":["YP20","YP30","YP20G","YP30G","YP40T"]
+},
+"Homelite":{"Chainsaw":["Super XL","XL-12","Super 2","150","240","360"]},
+"McCulloch":{"Chainsaw":["Mini Mac","Pro Mac 610","Super Pro","SP-81","SP-125"]},
+"Poulan":{"Chainsaw":["P3314","P3816","Wild Thing","Pro 5020"]},
+"Toro":{"Mower":["Recycler 22\"","Super Recycler","TimeMaster 30\"","Proline","Grandstand","Z Master"]},
+"John Deere":{"Mower":["D105","E120","S100","S120","X350"]},
+"Craftsman":{"Mower":["M105","T110","YT3000"],"Edger":["Edger"]},
+"Cub Cadet":{"Mower":["XT1","SC 100"]},
+"Generac":{"Generator":["GP3500","GP6500","GP8000E","iQ3500"]},
+"Champion":{"Generator":["3500","4500","7500"]},
+"Predator":{"Generator":["2000","3500","9000"]},
+"Westinghouse":{"Generator":["iGen2200","WGen7500"]},
+"Coleman":{"Generator":["Powermate 6250"]},
+"Dayton":{"Pump":["2 in pump","3 in pump"]},
+"Simpson":{"Pressure washer":["MegaShot","PowerShot"]},
+"Ryobi":{},"DeWalt":{},"Milwaukee":{},"Troy-Bilt":{},"Snapper":{},"Exmark":{},"DuroMax":{}
+};
+
+
+var jobs = [], filter = 'all', editId = null, totalTouched = false;
+
+function num(v){ var n = parseFloat(v); return isFinite(n) ? n : 0; }
+function money(n){ return '$' + (Math.round(n*100)/100).toLocaleString('en-US',{minimumFractionDigits: n%1 ? 2 : 0, maximumFractionDigits:2}); }
+function hrs(n){ return (Math.round(n*100)/100).toString(); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function today(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function niceDate(s){ if(!s) return 'No date'; var p=s.split('-'); return MONTHS[+p[1]-1].slice(0,3)+' '+(+p[2])+', '+p[0]; }
+var TC={chainsaw:'#ff5a1f',saw:'#ff5a1f',blower:'#0ea5e9',trimmer:'#22c55e','hedge trimmer':'#84cc16',mower:'#16a34a',edger:'#14b8a6','pressure washer':'#3b82f6',generator:'#eab308',pump:'#06b6d4',tiller:'#a16207'};
+var PAL=['#ec4899','#8b5cf6','#f59e0b','#06b6d4','#ef4444','#10b981'];
+function typeColor(t){ t=(t||'').toLowerCase().trim(); if(!t) return '#ff5a1f'; if(TC[t]) return TC[t]; var n=0; for(var i=0;i<t.length;i++) n+=t.charCodeAt(i); return PAL[n%PAL.length]; }
+function machine(j){ return [j.brand,j.type,j.model].filter(Boolean).join(' '); }
+
+function setSync(cls, txt){ $('sync').className = 'sync' + (cls?' '+cls:''); $('sync').textContent = txt; }
+
+JOBS.onSnapshot(function(snap){
+  jobs = snap.docs.map(function(d){ var o=d.data(); o.id=d.id; return o; });
+  setSync('', snap.metadata.hasPendingWrites ? 'Saving…' : '✓ Saved & synced');
+  if(snap.metadata.hasPendingWrites) $('sync').className='sync saving';
+  fillLists(); render();
+}, function(err){
+  setSync('error','⚠ Can’t load jobs: ' + (err.code||err.message));
+  $('list').innerHTML='<div class="empty">The database said no ('+esc(err.code||'error')+'). If it says permission-denied, the Firebase rules need to allow the <b>jobs</b> collection.</div>';
+});
+
+// ---------- Search ----------
+// Every word must match somewhere. Matches dates like "11/19", "nov", "2026", numbers, any text.
+function haystack(j){
+  var p = (j.date||'').split('-');
+  var dateBits = j.date ? [j.date, niceDate(j.date), MONTHS[+p[1]-1], (+p[1])+'/'+(+p[2])+'/'+p[0], (+p[1])+'/'+(+p[2]), p[1]+'/'+p[2]+'/'+p[0]].join(' ') : '';
+  return [dateBits, j.customer, j.brand, j.type, j.model, j.request, j.done,
+    'actual '+hrs(num(j.hoursWorked)), 'book '+hrs(num(j.hoursCharged)), 'profit', 'parts supplies',
+    money(num(j.total)), num(j.total), money(num(j.tools)), num(j.tools), num(j.rate)].join(' ').toLowerCase();
+}
+function inFilter(j){
+  if(filter==='all') return true;
+  var d = new Date(), y = d.getFullYear(), m = d.getMonth()+1;
+  var p = (j.date||'').split('-'); if(p.length<3) return false;
+  var jy=+p[0], jm=+p[1];
+  if(filter==='year') return jy===y;
+  if(filter==='month') return jy===y && jm===m;
+  if(filter==='last'){ var ly = m===1 ? y-1 : y, lm = m===1 ? 12 : m-1; return jy===ly && jm===lm; }
+  return true;
+}
+function hl(text, words){
+  var s = esc(text); if(!words.length) return s;
+  words.forEach(function(w){
+    var e = esc(w).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    s = s.replace(new RegExp('('+e+')(?![^<]*>)','gi'),'<mark>$1</mark>');
+  });
+  return s;
+}
+
+var layout = 'D'; // Andy picked the timeline
+var LAYOUT_NAMES = {A:'Big cards', B:'Compact rows', C:'Tiles', D:'Timeline'};
+var ICONS = {chainsaw:'🪚',saw:'🪚',blower:'💨',trimmer:'🌿','hedge trimmer':'✂️',mower:'🚜',edger:'📐','pressure washer':'💦',generator:'⚡',pump:'🚰',tiller:'🌱'};
+function icon(t){ return ICONS[(t||'').toLowerCase().trim()] || '🔧'; }
+var DAYS=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+var openRow = null;
+function card(j, words){
+  var mach = machine(j) || 'Machine not entered', c = typeColor(j.type), p = (j.date||'').split('-');
+  var mon = j.date ? MONTHS[+p[1]-1].slice(0,3).toUpperCase() : '—', day = j.date ? +p[2] : '';
+  var hw = hrs(num(j.hoursWorked)), hc = hrs(num(j.hoursCharged));
+  if(layout==='B'){
+    var isOpen = openRow===j.id;
+    return '<div class="rowb'+(isOpen?' open':'')+'" style="--tc:'+c+'">'+
+      '<button class="rb" data-row="'+j.id+'"><div class="dblk"><small>'+mon+'</small><span>'+day+'</span></div>'+
+      '<div class="rm"><h3>'+hl(mach,words)+'</h3><p>'+(j.customer?hl(j.customer,words)+' · ':'')+hw+' hr / '+hc+' charged</p></div>'+
+      '<div class="amt">'+money(num(j.total))+(num(j.tools)?'<small>tools '+money(num(j.tools))+'</small>':'')+'</div></button>'+
+      (isOpen ? '<div class="rdet">'+(j.request?'<div class="req"><b>Asked:</b> '+hl(j.request,words)+'</div>':'')+
+        (j.done?'<div class="req"><b>Done:</b> '+hl(j.done,words)+'</div>':'')+
+        '<button class="item editb" data-id="'+j.id+'">✏️ Edit</button></div>' : '')+
+      '</div>';
+  }
+  if(layout==='C'){
+    return '<button class="item tile" style="--tc:'+c+'" data-id="'+j.id+'"><div class="ic">'+icon(j.type)+'</div>'+
+      '<h3>'+hl([j.brand,j.model].filter(Boolean).join(' ')||mach,words)+'</h3>'+
+      '<p>'+hl(niceDate(j.date).replace(/, \d{4}$/,''),words)+(j.customer?' · '+hl(j.customer,words):'')+'</p>'+
+      (j.request?'<p class="cl">'+hl(j.request,words)+'</p>':'')+
+      '<div class="a">'+money(num(j.total))+'</div><p>'+hw+' hr / '+hc+' charged</p></button>';
+  }
+  if(layout==='D'){
+    var dow = j.date ? DAYS[new Date(+p[0],+p[1]-1,+p[2]).getDay()]+' '+mon+' '+day : 'NO DATE';
+    return '<button class="item ev" style="--tc:'+c+'" data-id="'+j.id+'"><div class="row1"><div>'+
+      '<div class="dt">'+dow+(j.customer?' · '+hl(j.customer.toUpperCase(),words):'')+'</div><h3>'+hl(mach,words)+'</h3></div>'+
+      '<div class="a">'+money(num(j.total))+'</div></div>'+
+      (j.request?'<div class="ln"><b>Requested:</b> '+hl(j.request,words)+'</div>':'')+
+      (j.done?'<div class="ln"><b>Performed:</b> '+hl(j.done,words)+'</div>':'')+
+      '<div class="pills"><span class="pl">📘 '+hc+' book hr</span><span class="pl">⏱ '+hw+' actual hr</span>'+(num(j.tools)?'<span class="pl">🔧 Parts '+money(num(j.tools))+'</span>':'')+
+      '<span class="pl prof">Profit '+money(num(j.total)-num(j.tools))+'</span></div></button>';
+  }
+  return '<button class="item" style="--tc:'+c+'" data-id="'+j.id+'"><div class="row1"><div>'+
+    (j.type?'<span class="tag">'+hl(j.type,words)+'</span>':'')+
+    '<h3>'+hl(mach,words)+'</h3>'+
+    '<div class="meta">'+hl(niceDate(j.date),words)+(j.customer?' · '+hl(j.customer,words):'')+'</div></div>'+
+    '<div class="money"><div class="p">'+money(num(j.total))+'</div>'+
+    '<div class="s">'+hw+' hr worked · '+hc+' charged</div>'+
+    (num(j.tools)?'<div class="s">Tools '+money(num(j.tools))+'</div>':'')+'</div></div>'+
+    (j.request?'<div class="req"><b>Asked:</b> '+hl(j.request,words)+'</div>':'')+
+    (j.done?'<div class="req"><b>Done:</b> '+hl(j.done,words)+'</div>':'')+
+    '</button>';
+}
+function applyLayout(){
+  document.body.className = 'lay-'+layout;
+  [].forEach.call(document.querySelectorAll('.lo'), function(b){ b.classList.toggle('on', b.dataset.l===layout); });
+}
+function render(){
+  var q = $('q').value.trim().toLowerCase();
+  $('clr').style.display = q ? 'block' : 'none';
+  var words = q ? q.split(/\s+/) : [];
+  var shown = jobs.filter(inFilter).filter(function(j){
+    if(!words.length) return true; var h = haystack(j);
+    return words.every(function(w){ return h.indexOf(w.replace(/^\$/,''))>-1 || h.indexOf(w)>-1; });
+  });
+  shown.sort(function(a,b){ return (b.date||'').localeCompare(a.date||'') || (b.created||0)-(a.created||0); });
+
+  var tw=0, tc=0, tm=0, tt=0;
+  shown.forEach(function(j){ tw+=num(j.hoursWorked); tc+=num(j.hoursCharged); tm+=num(j.total); tt+=num(j.tools); });
+  var made = tm - tt;
+  $('sJobs').textContent = shown.length;
+  $('sHours').textContent = hrs(tw) + ' / ' + hrs(tc);
+  $('sMade').textContent = money(Math.round(made));
+  $('sRate').textContent = tw ? '$' + Math.round(made / tw) : '–';
+  $('sSub').textContent = 'Charged ' + money(tm) + ' · Parts & supplies ' + money(tt);
+  $('hint').textContent = q ? shown.length + (shown.length===1?' job found':' jobs found') : '';
+
+  if(!jobs.length){ $('list').innerHTML = '<div class="empty">No jobs yet.<br>Tap <b>+ Add</b> to log the first one.</div>'; return; }
+  if(!shown.length){ $('list').innerHTML = '<div class="empty">Nothing matches.</div>'; return; }
+
+  // group by month
+  var groups = [], gmap = {};
+  shown.forEach(function(j){
+    var p=(j.date||'').split('-'), mk = j.date ? MONTHS[+p[1]-1]+' '+p[0] : 'No date';
+    if(!gmap[mk]){ gmap[mk] = {name:mk, jobs:[], total:0}; groups.push(gmap[mk]); }
+    gmap[mk].jobs.push(j); gmap[mk].total += num(j.total);
+  });
+  var html = '';
+  groups.forEach(function(g){
+    if(layout==='D') html += '<div class="tl"><span class="mon">'+esc(g.name.toUpperCase())+' · '+money(g.total)+'</span>';
+    else html += '<div class="mhd"><span>'+g.name+'</span><span>'+money(g.total)+'</span></div>';
+    if(layout==='C') html += '<div class="grid">';
+    g.jobs.forEach(function(j){ html += card(j, words); });
+    if(layout==='C' || layout==='D') html += '</div>';
+  });
+  if(words.length || filter!=='all') html += '<div class="totalbar"><span>Total for these '+shown.length+'</span><span>'+money(tm)+'</span></div>';
+  $('list').innerHTML = html;
+}
+
+$('q').addEventListener('input', render);
+$('clr').onclick = function(){ $('q').value=''; render(); $('q').focus(); };
+$('tabs').onclick = function(e){
+  var b = e.target.closest('.ft'); if(!b) return;
+  filter = b.dataset.f;
+  [].forEach.call(document.querySelectorAll('.ft'), function(x){ x.classList.toggle('on', x===b); });
+  render();
+};
+$('list').onclick = function(e){
+  var r = e.target.closest('.rb'); if(r){ openRow = openRow===r.dataset.row ? null : r.dataset.row; render(); return; }
+  var b = e.target.closest('.item'); if(b) openForm(b.dataset.id);
+};
+$('layoutBar').onclick = function(e){ var b = e.target.closest('.lo'); if(!b) return; layout = b.dataset.l; try{ localStorage.setItem('jobsLayout', layout); }catch(x){} applyLayout(); render(); };
+$('nJobs').onclick = function(){ window.scrollTo({top:0,behavior:'smooth'}); };
+$('nSearch').onclick = function(){ window.scrollTo({top:0}); $('q').focus(); };
+$('nAdd').onclick = function(){ openForm(null); };
+$('nCsv').onclick = function(){ $('csvBtn').click(); };
+$('nSound').onclick = function(){ $('soundBtn').click(); $('nSound').innerHTML = (soundOn?'🔊':'🔇')+'<br>Sound'; };
+applyLayout();
+
+// ---------- Suggestions ----------
+function opts(arr){ return arr.map(function(v){ return '<option value="'+esc(v)+'">'; }).join(''); }
+function uniq(arr){ var s={}; return arr.filter(function(v){ v=(v||'').trim(); if(!v||s[v.toLowerCase()]) return false; s[v.toLowerCase()]=1; return true; }); }
+function fillLists(){
+  $('brandList').innerHTML = opts(uniq(Object.keys(MODELS).concat(jobs.map(function(j){return j.brand;}))).sort());
+  $('custList').innerHTML = opts(uniq(jobs.map(function(j){return j.customer;})).sort());
+  fillTypes();
+}
+function brandKey(){ var b=$('fBrand').value.trim().toLowerCase(); return Object.keys(MODELS).filter(function(k){return k.toLowerCase()===b;})[0]; }
+function fillTypes(){
+  var k = brandKey(), types = k ? Object.keys(MODELS[k]) : [];
+  var mine = jobs.filter(function(j){ return !k || (j.brand||'').toLowerCase()===k.toLowerCase(); }).map(function(j){return j.type;});
+  $('typeList').innerHTML = opts(uniq(types.concat(mine, ['Chainsaw','Trimmer','Blower','Hedge trimmer','Mower','Pressure washer','Generator','Pump','Edger','Tiller'])));
+  fillModels();
+}
+function fillModels(){
+  var k = brandKey(), t = $('fType').value.trim().toLowerCase(), list = [];
+  if(k){ Object.keys(MODELS[k]).forEach(function(tp){ if(!t || tp.toLowerCase()===t) list = list.concat(MODELS[k][tp]); }); }
+  var mine = jobs.filter(function(j){ return (!k || (j.brand||'').toLowerCase()===k.toLowerCase()) && (!t || (j.type||'').toLowerCase()===t); }).map(function(j){return j.model;});
+  $('modelList').innerHTML = opts(uniq(mine.concat(list)));
+}
+$('fBrand').addEventListener('input', fillTypes);
+$('fType').addEventListener('input', fillModels);
+
+// ---------- Form ----------
+function calc(){
+  var labor = num($('fHc').value) * num($('fRate').value);
+  var auto = labor + num($('fTools').value);
+  if(!totalTouched) $('fTotal').value = auto ? (Math.round(auto*100)/100) : '';
+  $('cLabor').textContent = money(labor);
+  $('cTotal').textContent = money(num($('fTotal').value));
+  $('fAuto').textContent = totalTouched && Math.abs(num($('fTotal').value)-auto)>0.009
+    ? 'You changed the total. (The math would be '+money(auto)+'.)' : 'Fills in by itself (book hours × rate + parts & supplies). You can change it.';
+}
+['fHc','fRate','fTools'].forEach(function(id){ $(id).addEventListener('input', calc); });
+$('fTotal').addEventListener('input', function(){ totalTouched = $('fTotal').value !== ''; calc(); });
+// Hours worked copies into hours charged until he changes hours charged himself
+var hcTouched = false;
+// (book hours and actual hours are entered separately)
+$('fHc').addEventListener('input', function(){ hcTouched = true; });
+
+function lastRate(){ try { return localStorage.getItem('jobsRate') || ''; } catch(e){ return ''; } }
+function openForm(id){
+  editId = id || null;
+  var j = id ? jobs.filter(function(x){return x.id===id;})[0] : null;
+  $('fTitle').textContent = j ? 'Edit job' : 'New job';
+  $('fDate').value = j ? (j.date||'') : today();
+  $('fCust').value = j ? (j.customer||'') : '';
+  $('fBrand').value = j ? (j.brand||'') : '';
+  $('fType').value = j ? (j.type||'') : '';
+  $('fModel').value = j ? (j.model||'') : '';
+  $('fReq').value = j ? (j.request||'') : '';
+  $('fDone').value = j ? (j.done||'') : '';
+  $('fHw').value = j && j.hoursWorked!=null ? j.hoursWorked : '';
+  $('fHc').value = j && j.hoursCharged!=null ? j.hoursCharged : '';
+  $('fRate').value = j ? (j.rate||'') : lastRate();
+  $('fTools').value = j && j.tools ? j.tools : '';
+  $('fTotal').value = j && j.total ? j.total : '';
+  hcTouched = !!j;
+  totalTouched = false;
+  if(j){ var auto = num(j.hoursCharged)*num(j.rate)+num(j.tools); totalTouched = Math.abs(num(j.total)-auto)>0.009; }
+  $('delBtn').style.display = j ? 'block' : 'none';
+  fillTypes(); calc();
+  $('ov').classList.add('show');
+}
+function closeForm(){ $('ov').classList.remove('show'); }
+$('addBtn').onclick = function(){ openForm(null); };
+$('cancelBtn').onclick = closeForm;
+$('ov').addEventListener('click', function(e){ if(e.target===$('ov')) closeForm(); });
+
+$('saveBtn').onclick = function(){
+  var data = {
+    date: $('fDate').value, customer: $('fCust').value.trim(),
+    brand: $('fBrand').value.trim(), type: $('fType').value.trim(), model: $('fModel').value.trim(),
+    request: $('fReq').value.trim(), done: $('fDone').value.trim(),
+    hoursWorked: num($('fHw').value), hoursCharged: num($('fHc').value),
+    rate: num($('fRate').value), tools: num($('fTools').value), total: num($('fTotal').value),
+    updated: Date.now()
+  };
+  if(!data.brand && !data.model && !data.request && !data.done && !data.total){ pop('Add a few details first',''); return; }
+  try { if(data.rate) localStorage.setItem('jobsRate', data.rate); } catch(e){}
+  $('sync').className='sync saving'; $('sync').textContent='Saving…';
+  var p = editId ? JOBS.doc(editId).set(data,{merge:true}) : JOBS.add(Object.assign({created:Date.now()}, data));
+  p.catch(function(err){ setSync('error','⚠ Not saved: '+(err.code||err.message)); });
+  closeForm();
+  happyTune(); pop(editId ? 'UPDATED!' : 'JOB SAVED!', money(data.total));
+};
+
+$('delBtn').onclick = function(){ $('cfOv').classList.add('show'); };
+$('cfNo').onclick = function(){ $('cfOv').classList.remove('show'); };
+$('cfYes').onclick = function(){
+  var id = editId; $('cfOv').classList.remove('show'); closeForm();
+  if(id) JOBS.doc(id).delete().catch(function(err){ setSync('error','⚠ Not deleted: '+(err.code||err.message)); });
+  pop('DELETED','');
+};
+
+// ---------- Export (whatever is showing now) ----------
+$('csvBtn').onclick = function(){
+  var rows = [['Date','Customer','Brand','Type','Model','Work requested','Work performed','Actual hours','Book hours','Rate','Parts & supplies','Total charged','Profit']];
+  var q = $('q').value.trim().toLowerCase(), words = q ? q.split(/\s+/) : [];
+  jobs.filter(inFilter).filter(function(j){ var h=haystack(j); return words.every(function(w){ return h.indexOf(w.replace(/^\$/,''))>-1; }); })
+    .sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); })
+    .forEach(function(j){ rows.push([j.date,j.customer,j.brand,j.type,j.model,j.request,j.done,j.hoursWorked,j.hoursCharged,j.rate,j.tools,j.total,num(j.total)-num(j.tools)]); });
+  var csv = rows.map(function(r){ return r.map(function(c){ c = String(c==null?'':c); return /[",\n]/.test(c) ? '"'+c.replace(/"/g,'""')+'"' : c; }).join(','); }).join('\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'}));
+  a.download = 'andys-jobs-'+today()+'.csv'; document.body.appendChild(a); a.click(); a.remove();
+};
+
+// ---------- Pop-up + sounds ----------
+var popT;
+function pop(big, small){
+  $('pop').innerHTML = esc(big) + (small ? '<small>'+esc(small)+'</small>' : '');
+  $('pop').classList.add('show'); clearTimeout(popT);
+  popT = setTimeout(function(){ $('pop').classList.remove('show'); }, 1300);
+}
+var actx, soundOn = true;
+try { soundOn = localStorage.getItem('ledgerSound') !== 'off'; } catch(e){}
+function ctx(){ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==='suspended') actx.resume(); return actx; }
+function tick(){
+  if(!soundOn) return;
+  try{
+    var a = ctx(), t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(700,t); o.frequency.exponentialRampToValueAtTime(500,t+0.04);
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.035,t+0.006); g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+0.08);
+  }catch(e){}
+}
+document.addEventListener('pointerdown', function(e){ var b = e.target.closest('button'); if(b && !b.classList.contains('item')) tick(); });
+function paintSound(){ $('soundBtn').textContent = soundOn ? '🔊' : '🔇'; }
+paintSound();
+$('soundBtn').onclick = function(){ soundOn = !soundOn; paintSound(); try { localStorage.setItem('ledgerSound', soundOn?'on':'off'); } catch(e){} };
+function happyTune(){
+  if(!soundOn) return;
+  try{
+    var a = ctx(), t = a.currentTime + 0.03;
+    [[523.25,0],[659.25,0.09],[783.99,0.18],[1046.5,0.27],[1318.5,0.38]].forEach(function(n,k){
+      var o = a.createOscillator(), g = a.createGain(), d = k===4 ? 0.6 : 0.22;
+      o.type='triangle'; o.frequency.value=n[0];
+      g.gain.setValueAtTime(0.0001,t+n[1]);
+      g.gain.exponentialRampToValueAtTime(0.25,t+n[1]+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+n[1]+d);
+      o.connect(g); g.connect(a.destination); o.start(t+n[1]); o.stop(t+n[1]+d+0.02);
+    });
+  }catch(e){}
+}
+</script>
+</body>
+</html>

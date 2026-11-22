@@ -6,11 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#ff5a1f">
-<title>Andy's Jobs</title>
+<title>Labor Report</title>
 <link rel="manifest" href="jobs-manifest.json">
 <link rel="icon" href="jobs-icon-192.png">
 <link rel="apple-touch-icon" href="jobs-icon-192.png">
-<meta name="apple-mobile-web-app-title" content="Andy's Jobs">
+<meta name="apple-mobile-web-app-title" content="Labor Report">
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <style>
@@ -32,7 +32,7 @@ button{cursor:pointer}
 .sync{text-align:center;padding:6px;font-size:12px;font-weight:600;background:var(--gainbg);color:var(--gain)}
 .sync.saving{background:#fef9c3;color:#854d0e}
 .sync.error{background:var(--lossbg);color:var(--loss)}
-.sbar{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:10px 10px 4px}
+.sbar{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:10px 10px 4px}
 .st{border-radius:12px;padding:8px 2px;color:#fff}
 .st:nth-child(1){background:linear-gradient(135deg,#3b82f6,#2563eb)}
 .st:nth-child(2){background:linear-gradient(135deg,#a78bfa,#7c3aed)}
@@ -132,7 +132,7 @@ textarea.field{min-height:70px;resize:vertical}
 <body>
 
 <div class="hdr">
-  <h1>🔧 Andy's Jobs</h1>
+  <h1>🔧 Labor Report</h1>
   <div class="hdr-r">
     <button class="hdr-btn" id="soundBtn">🔊</button>
     <button class="hdr-btn" id="csvBtn">⬇ Export</button>
@@ -145,7 +145,6 @@ textarea.field{min-height:70px;resize:vertical}
   <div class="st"><div class="sn" id="sJobs">0</div><div class="sl">Jobs</div></div>
   <div class="st"><div class="sn" id="sHours">0 / 0</div><div class="sl">Actual / book hours</div></div>
   <div class="st"><div class="sn g" id="sMade">$0</div><div class="sl">Profit</div></div>
-  <div class="st"><div class="sn" id="sRate">–</div><div class="sl">Per hour</div></div>
 </div>
 <div class="subline" id="sSub">Charged $0 · Parts &amp; supplies $0</div>
 
@@ -492,8 +491,7 @@ function render(){
   $('sJobs').textContent = shown.length;
   $('sHours').textContent = hrs(tw) + ' / ' + hrs(tc);
   $('sMade').textContent = money(Math.round(made));
-  $('sRate').textContent = tw ? '$' + Math.round(made / tw) : '–';
-  $('sSub').textContent = 'Charged ' + money(tm) + ' · Parts & supplies ' + money(tt);
+    $('sSub').textContent = 'Charged ' + money(tm) + ' · Parts & supplies ' + money(tt);
   $('hint').textContent = q ? shown.length + (shown.length===1?' job found':' jobs found') : '';
 
   if(!jobs.length){ $('list').innerHTML = '<div class="empty">No jobs yet.<br>Tap <b>+ Add</b> to log the first one.</div>'; return; }

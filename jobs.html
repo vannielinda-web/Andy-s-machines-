@@ -127,6 +127,8 @@ textarea.field{min-height:70px;resize:vertical}
 .pl.prof{background:#dcfce7;color:#166534}
 .layoutbar{display:none!important}
 .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.pl{font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;background:#f1f5f9;color:#475569}
+.cbox{margin-top:12px;border:1.5px solid #fed7aa;background:#fff7ed;border-radius:12px;padding:4px 10px 10px}
+.ctitle{font-size:13px;font-weight:800;color:#c2410c;margin-top:6px}.ctitle span{font-weight:500;color:var(--muted);font-size:11px}
 </style>
 </head>
 <body>
@@ -177,6 +179,20 @@ textarea.field{min-height:70px;resize:vertical}
       <div><label for="fBrand">Brand</label><input class="field" id="fBrand" list="brandList" placeholder="Stihl"></div>
       <div><label for="fType">Type</label><input class="field" id="fType" list="typeList" placeholder="Chainsaw"></div>
       <div><label for="fModel">Model</label><input class="field" id="fModel" list="modelList" placeholder="MS 250"></div>
+    </div>
+    <div class="g2">
+      <div><label for="fSerial">Serial #</label><input class="field" id="fSerial" placeholder="(optional)"></div>
+      <div><label for="fMHours">Machine hours / mileage</label><input class="field" id="fMHours" placeholder="(optional)"></div>
+    </div>
+    <div class="cbox">
+      <div class="ctitle">👤 Customer details <span>(for invoices)</span></div>
+      <div class="g2">
+        <div><label for="fCompany">Company</label><input class="field" id="fCompany" placeholder="(optional)"></div>
+        <div><label for="fPhone">Phone</label><input class="field" id="fPhone" type="tel"></div>
+      </div>
+      <label for="fEmail">Email</label><input class="field" id="fEmail" type="email">
+      <label for="fAddr">Address</label><textarea class="field" id="fAddr" style="min-height:52px" placeholder="Street&#10;Town, NJ ZIP"></textarea>
+      <div class="small">Pick a past customer in the Customer box above and these fill in by themselves.</div>
     </div>
     <label for="fReq">Work requested</label>
     <textarea class="field" id="fReq" placeholder="Won't start, runs rough…"></textarea>
@@ -399,7 +415,7 @@ JOBS.onSnapshot(function(snap){
 function haystack(j){
   var p = (j.date||'').split('-');
   var dateBits = j.date ? [j.date, niceDate(j.date), MONTHS[+p[1]-1], (+p[1])+'/'+(+p[2])+'/'+p[0], (+p[1])+'/'+(+p[2]), p[1]+'/'+p[2]+'/'+p[0]].join(' ') : '';
-  return [dateBits, j.customer, j.brand, j.type, j.model, j.request, j.done,
+  return [dateBits, j.customer, j.company, j.phone, j.email, j.address, j.serial, j.brand, j.type, j.model, j.request, j.done,
     'actual '+hrs(num(j.hoursWorked)), 'book '+hrs(num(j.hoursCharged)), 'profit', 'parts supplies',
     money(num(j.total)), num(j.total), money(num(j.tools)), num(j.tools), num(j.rate)].join(' ').toLowerCase();
 }
@@ -560,6 +576,17 @@ function fillModels(){
 $('fBrand').addEventListener('input', fillTypes);
 $('fType').addEventListener('input', fillModels);
 
+// Customer autofill: pick a past customer and their details fill in
+$('fCust').addEventListener('change', function(){
+  var n = $('fCust').value.trim().toLowerCase(); if(!n) return;
+  var hit = jobs.filter(function(j){ return (j.customer||'').trim().toLowerCase()===n && (j.company||j.phone||j.email||j.address); })
+    .sort(function(a,b){ return (b.updated||b.created||0)-(a.updated||a.created||0); })[0];
+  if(!hit) return;
+  if(!$('fCompany').value) $('fCompany').value = hit.company||'';
+  if(!$('fPhone').value) $('fPhone').value = hit.phone||'';
+  if(!$('fEmail').value) $('fEmail').value = hit.email||'';
+  if(!$('fAddr').value) $('fAddr').value = hit.address||'';
+});
 // ---------- Form ----------
 function calc(){
   var labor = num($('fHc').value) * num($('fRate').value);
@@ -587,6 +614,9 @@ function openForm(id){
   $('fBrand').value = j ? (j.brand||'') : '';
   $('fType').value = j ? (j.type||'') : '';
   $('fModel').value = j ? (j.model||'') : '';
+  $('fSerial').value = j ? (j.serial||'') : ''; $('fMHours').value = j ? (j.machineHours||'') : '';
+  $('fCompany').value = j ? (j.company||'') : ''; $('fPhone').value = j ? (j.phone||'') : '';
+  $('fEmail').value = j ? (j.email||'') : ''; $('fAddr').value = j ? (j.address||'') : '';
   $('fReq').value = j ? (j.request||'') : '';
   $('fDone').value = j ? (j.done||'') : '';
   $('fHw').value = j && j.hoursWorked!=null ? j.hoursWorked : '';
@@ -610,6 +640,8 @@ $('saveBtn').onclick = function(){
   var data = {
     date: $('fDate').value, customer: $('fCust').value.trim(),
     brand: $('fBrand').value.trim(), type: $('fType').value.trim(), model: $('fModel').value.trim(),
+    serial: $('fSerial').value.trim(), machineHours: $('fMHours').value.trim(),
+    company: $('fCompany').value.trim(), phone: $('fPhone').value.trim(), email: $('fEmail').value.trim(), address: $('fAddr').value.trim(),
     request: $('fReq').value.trim(), done: $('fDone').value.trim(),
     hoursWorked: num($('fHw').value), hoursCharged: num($('fHc').value),
     rate: num($('fRate').value), tools: num($('fTools').value), total: num($('fTotal').value),
@@ -634,11 +666,11 @@ $('cfYes').onclick = function(){
 
 // ---------- Export (whatever is showing now) ----------
 $('csvBtn').onclick = function(){
-  var rows = [['Date','Customer','Brand','Type','Model','Work requested','Work performed','Actual hours','Book hours','Rate','Parts & supplies','Total billed','Profit']];
+  var rows = [['Date','Customer','Company','Phone','Email','Address','Brand','Type','Model','Serial #','Machine hours','Work requested','Work performed','Actual hours','Book hours','Rate','Parts & supplies','Total billed','Profit']];
   var q = $('q').value.trim().toLowerCase(), words = q ? q.split(/\s+/) : [];
   jobs.filter(inFilter).filter(function(j){ var h=haystack(j); return words.every(function(w){ return h.indexOf(w.replace(/^\$/,''))>-1; }); })
     .sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); })
-    .forEach(function(j){ rows.push([j.date,j.customer,j.brand,j.type,j.model,j.request,j.done,j.hoursWorked,j.hoursCharged,j.rate,j.tools,j.total,num(j.total)-num(j.tools)]); });
+    .forEach(function(j){ rows.push([j.date,j.customer,j.company,j.phone,j.email,j.address,j.brand,j.type,j.model,j.serial,j.machineHours,j.request,j.done,j.hoursWorked,j.hoursCharged,j.rate,j.tools,j.total,num(j.total)-num(j.tools)]); });
   var csv = rows.map(function(r){ return r.map(function(c){ c = String(c==null?'':c); return /[",\n]/.test(c) ? '"'+c.replace(/"/g,'""')+'"' : c; }).join(','); }).join('\n');
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv'}));

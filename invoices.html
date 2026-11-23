@@ -663,22 +663,29 @@ $('vSave').onclick=function(){
   var inv=invoices.filter(function(x){return x.id===viewId;})[0]; if(!inv) return;
   var b=$('vSave'); busy(b,true,'Making PDF…');
   preparePdf(inv).then(function(f){ downloadFile(f); pop('PDF SAVED', f.name); })
-    .catch(function(e){ pop('Couldn’t make the PDF', 'Check the internet and try again'); })
+    .catch(function(e){ pop('Couldn’t make the PDF', (e&&e.message||'Check the internet').slice(0,60)); })
     .then(function(){ busy(b,false); });
 };
 $('vShare').onclick=function(){
   var inv=invoices.filter(function(x){return x.id===viewId;})[0]; if(!inv) return;
-  var b=$('vShare'); busy(b,true,'Making PDF…');
-  var c=inv.client||{};
-  var ready = (pdfCache.key===pdfKey(inv) && pdfCache.file) ? Promise.resolve(pdfCache.file) : preparePdf(inv);
-  ready.then(function(f){
-    var msg='Hi'+(c.name?' '+c.name.split(' ')[0]:'')+', here is your invoice #'+inv.num+' from '+biz.name+' for '+m2(totals(inv).total)+'. Thank you!';
-    if(navigator.canShare && navigator.canShare({files:[f]})){
-      return navigator.share({files:[f], title:'Invoice #'+inv.num, text:msg}).catch(function(e){ if(e && e.name!=='AbortError') throw e; });
-    }
-    downloadFile(f); pop('PDF SAVED','Sharing isn’t available here, so it was saved');
-  }).catch(function(e){ pop('Couldn’t share', 'Check the internet and try again'); })
-    .then(function(){ busy(b,false); });
+  var b=$('vShare'), c=inv.client||{};
+  var f=(pdfCache.key===pdfKey(inv)) ? pdfCache.file : null;
+  if(!f){
+    // Phones only allow the share menu right after a tap, so get the PDF ready first, then ask for one more tap
+    busy(b,true,'Getting PDF ready…');
+    preparePdf(inv).then(function(){ busy(b,false); b.textContent='💬 Tap again to share'; pop('PDF READY','Tap Share again'); })
+      .catch(function(e){ busy(b,false); pop('Couldn’t make the PDF', (e&&e.message||'').slice(0,60)); });
+    return;
+  }
+  b.textContent='💬 Share / Text';
+  var msg='Hi'+(c.name?' '+c.name.split(' ')[0]:'')+', here is your invoice #'+inv.num+' from '+biz.name+' for '+m2(totals(inv).total)+'. Thank you!';
+  var data={files:[f], title:'Invoice #'+inv.num, text:msg};
+  var ok=false; try { ok = !!(navigator.share && navigator.canShare && navigator.canShare({files:[f]})); } catch(x){ ok=false; }
+  if(!ok){ downloadFile(f); pop('SAVED TO DOWNLOADS','This browser can’t share files. Attach it in Messages.'); return; }
+  navigator.share(data).catch(function(e){
+    if(e && e.name==='AbortError') return;
+    downloadFile(f); pop('SAVED TO DOWNLOADS','Share didn’t open ('+(e&&e.name||'error')+'). Attach it in Messages.');
+  });
 };
 $('vDup').onclick=function(){
   var inv=invoices.filter(function(x){return x.id===viewId;})[0]; if(!inv) return;

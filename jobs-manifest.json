@@ -1,8 +1,9 @@
 {
   "name": "Labor Ledger",
   "short_name": "Labor Ledger",
-  "start_url": "jobs.html",
-  "scope": "./",
+  "id": "./jobs.html",
+  "start_url": "./jobs.html",
+  "scope": "./jobs.html",
   "display": "standalone",
   "background_color": "#fff7ed",
   "theme_color": "#ff5a1f",

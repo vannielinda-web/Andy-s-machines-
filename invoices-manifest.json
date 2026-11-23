@@ -1,8 +1,9 @@
 {
   "name": "Bob's Shop Invoices",
   "short_name": "Invoices",
-  "start_url": "invoices.html",
-  "scope": "./",
+  "id": "./invoices.html",
+  "start_url": "./invoices.html",
+  "scope": "./invoices.html",
   "display": "standalone",
   "background_color": "#f1f5ff",
   "theme_color": "#2563eb",

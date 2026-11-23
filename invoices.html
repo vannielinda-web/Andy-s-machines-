@@ -271,6 +271,8 @@ body.customer #cust{display:block!important;padding:12px}
   <label for="bNext">Next invoice #</label><input class="field" id="bNext" type="number" inputmode="numeric">
   <label for="bNotes">Default notes</label><textarea class="field" id="bNotes" style="min-height:90px"></textarea>
   <label for="bTag">Services line (under the address)</label><textarea class="field" id="bTag"></textarea>
+  <label for="bLink">Invoice link website (for texts)</label><input class="field" id="bLink" placeholder="Leave empty to use the current link">
+  <div class="small">Example: bobs-shop-nj.github.io</div>
   <label for="bFoot">Bottom line</label><input class="field" id="bFoot">
   <div class="btns"><button class="btn" id="setCancel">Cancel</button><button class="btn main" id="setSave">Save</button></div>
 </div></div>
@@ -685,11 +687,12 @@ $('vShare').onclick=function(){
 function niceName(n){ n=n||''; return n===n.toUpperCase() ? n.toLowerCase().replace(/(^|\s)\S/g,function(c){return c.toUpperCase();}) : n; }
 function smsUrl(inv){
   var c=inv.client||{};
-  var link=location.origin+location.pathname+'?v='+encodeURIComponent(inv.id);
+  var site=(biz.link||'').trim().replace(/^https?:\/\//i,'').replace(/\/+$/,'');
+  var link = site ? 'https://'+site+'/?i='+encodeURIComponent(inv.id) : location.origin+location.pathname+'?v='+encodeURIComponent(inv.id);
   var msg='Hi'+(c.name?' '+c.name.split(' ')[0]:'')+', here is your invoice #'+inv.num+' from '+niceName(biz.name)+' for '+m2(totals(inv).total)+':\n'+link+'\nThank you!';
-  var phone=(c.phone||'').replace(/[^\d+]/g,'');
   var ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
-  return 'sms:'+phone+(ios?'&':'?')+'body='+encodeURIComponent(msg);
+  // No number on purpose: Andy types or picks the contact himself
+  return 'sms:'+(ios?'&':'?')+'body='+encodeURIComponent(msg);
 }
 $('vDup').onclick=function(){
   var inv=invoices.filter(function(x){return x.id===viewId;})[0]; if(!inv) return;
@@ -707,14 +710,14 @@ $('cfYes').onclick=function(){
 $('setBtn').onclick=function(){
   $('bName').value=biz.name; $('bAddr').value=biz.addr; $('bPhone').value=biz.phone; $('bEmail').value=biz.email;
   $('bLogo').checked=biz.logo!==false; $('bRate').value=biz.rate||'';
-  $('bNext').value=nextNumber(); $('bNotes').value=biz.notes; $('bFoot').value=biz.foot; $('bTag').value=biz.tag||'';
+  $('bNext').value=nextNumber(); $('bNotes').value=biz.notes; $('bFoot').value=biz.foot; $('bTag').value=biz.tag||''; $('bLink').value=biz.link||'';
   $('setOv').classList.add('show');
 };
 $('setCancel').onclick=function(){ $('setOv').classList.remove('show'); };
 $('setSave').onclick=function(){
   var d={name:$('bName').value.trim(), addr:$('bAddr').value.trim(), phone:$('bPhone').value.trim(), email:$('bEmail').value.trim(),
     logo:$('bLogo').checked, rate:num($('bRate').value), tax:0, 
-    next:num($('bNext').value)||1001, notes:$('bNotes').value, foot:$('bFoot').value.trim(), tag:$('bTag').value.trim()};
+    next:num($('bNext').value)||1001, notes:$('bNotes').value, foot:$('bFoot').value.trim(), tag:$('bTag').value.trim(), link:$('bLink').value.trim()};
   biz=Object.assign({},DEFAULTS,d);
   SET.set(d,{merge:true}).catch(function(err){ setSync('error','⚠ Not saved: '+(err.code||err.message)); });
   $('setOv').classList.remove('show'); pop('SAVED','');

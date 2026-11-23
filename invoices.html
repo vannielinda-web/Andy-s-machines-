@@ -32,7 +32,7 @@ button{cursor:pointer}
 .st{border-radius:12px;padding:9px 2px;color:#fff;text-align:center}
 .st:nth-child(1){background:linear-gradient(135deg,#3b82f6,#2563eb)}
 .st:nth-child(2){background:linear-gradient(135deg,#4ade80,#16a34a)}
-.st:nth-child(3){background:linear-gradient(135deg,#fb7185,#e11d48)}
+.st:nth-child(3){background:linear-gradient(135deg,#a78bfa,#7c3aed)}
 .sn{font-size:18px;font-weight:800}.sl{font-size:10px;font-weight:700;text-transform:uppercase;opacity:.92}
 .ftabs{display:flex;gap:6px;padding:8px 10px 2px;overflow-x:auto}
 .ft{flex-shrink:0;padding:8px 14px;font-size:13px;font-weight:700;color:#4338ca;border:none;background:#e0e7ff;border-radius:20px;white-space:nowrap}
@@ -148,15 +148,14 @@ textarea.field{min-height:58px;resize:vertical}
 
 <div class="sbar">
   <div class="st"><div class="sn" id="sCount">0</div><div class="sl">Invoices</div></div>
-  <div class="st"><div class="sn" id="sPaid">$0</div><div class="sl">Paid</div></div>
-  <div class="st"><div class="sn" id="sOwed">$0</div><div class="sl">Unpaid</div></div>
+  <div class="st"><div class="sn" id="sPaid">$0</div><div class="sl">Total billed</div></div>
+  <div class="st"><div class="sn" id="sOwed">$0</div><div class="sl">Parts &amp; supplies</div></div>
 </div>
 
 <div class="ftabs" id="tabs">
   <button class="ft on" data-f="all">All</button>
-  <button class="ft" data-f="unpaid">Unpaid</button>
-  <button class="ft" data-f="paid">Paid</button>
   <button class="ft" data-f="month">This month</button>
+  <button class="ft" data-f="last">Last month</button>
   <button class="ft" data-f="year">This year</button>
 </div>
 <div class="sw">
@@ -191,10 +190,9 @@ textarea.field{min-height:58px;resize:vertical}
   </div>
 
   <div class="sec">Dates</div>
-  <div class="g3">
-    <div><label for="dIssue">Issue date</label><input class="field" id="dIssue" type="date"></div>
+  <div class="g2">
+    <div><label for="dIssue">Invoice date</label><input class="field" id="dIssue" type="date"></div>
     <div><label for="dService">Service date</label><input class="field" id="dService" type="date"></div>
-    <div><label for="dDue">Due date</label><input class="field" id="dDue" type="date"></div>
   </div>
 
   <div class="sec">Services &amp; parts</div>
@@ -214,15 +212,9 @@ textarea.field{min-height:58px;resize:vertical}
     <div class="tr big"><span>Total</span><span id="tTot">$0.00</span></div>
   </div>
 
-  <div class="sec">Notes on the invoice</div>
-  <textarea class="field" id="notes" style="min-height:80px"></textarea>
+  <div class="sec">Note for the customer <span style="font-weight:500;opacity:.85">(optional)</span></div>
+  <textarea class="field" id="notes" style="min-height:60px" placeholder="Leave empty if not needed"></textarea>
 
-  <div class="sec">Payment</div>
-  <div class="g3">
-    <div><label for="pStatus">Status</label><select class="field" id="pStatus"><option value="unpaid">Unpaid</option><option value="paid">Paid</option></select></div>
-    <div><label for="pMethod">Paid by</label><select class="field" id="pMethod"><option value="">—</option><option>Cash</option><option>Check</option><option>Card</option><option>Zelle</option><option>Venmo</option><option>Other</option></select></div>
-    <div><label for="pDate">Paid date</label><input class="field" id="pDate" type="date"></div>
-  </div>
 
   <div class="btns">
     <button class="btn" id="edCancel">Cancel</button>
@@ -242,9 +234,10 @@ textarea.field{min-height:58px;resize:vertical}
 <div class="ov" id="vOv"><div class="sheet" style="max-width:860px">
   <div class="vbar">
     <button class="btn" id="vBack">← Back</button>
-    <button class="btn main" id="vPrint">🖨 Print / PDF</button>
+    <button class="btn main" id="vShare">💬 Share / Text</button>
+    <button class="btn" id="vSave">⬇ Save PDF</button>
+    <button class="btn" id="vPrint">🖨 Print</button>
     <button class="btn" id="vEdit">✏️ Edit</button>
-    <button class="btn paid" id="vPaid">💵 Mark paid</button>
   </div>
   <div class="paperwrap"><div id="vPaper"></div></div>
   <div class="btns">
@@ -266,7 +259,6 @@ textarea.field{min-height:58px;resize:vertical}
   <label><input type="checkbox" id="bLogo" style="width:auto;margin-right:6px">Show the Bob's Shop logo</label>
   <div class="g2">
     <div><label for="bRate">Labor rate ($/hr)</label><input class="field" id="bRate" type="number" inputmode="decimal"></div>
-    <div><label for="bDue">Due in (days)</label><input class="field" id="bDue" type="number" inputmode="numeric"></div>
   </div>
   <label for="bNext">Next invoice #</label><input class="field" id="bNext" type="number" inputmode="numeric">
   <label for="bNotes">Default notes</label><textarea class="field" id="bNotes" style="min-height:90px"></textarea>
@@ -308,7 +300,7 @@ var JOBS = db.collection('jobs');
 var DEFAULTS = {
   name:"BOB'S SHOP", addr:"124 Star Lake Rd\nBloomingdale, NJ 07403", phone:"(201) 742-7828", email:"",
   logo:true, rate:0, tax:0, due:7, next:1001,
-  notes:"Please make all checks payable to Bob's Shop.",
+  notes:"",
   foot:"Thank you for your business!",
   tag:"Chainsaws, concrete saws, landscaping, construction and snow equipment repair. 2 and 4 cycle. All brands welcome."
 };
@@ -334,11 +326,9 @@ function totals(inv){
   tax=Math.round(tax*100)/100;
   return {sub:sub, disc:disc, tax:tax, total:Math.round((sub-disc+tax)*100)/100};
 }
-function status(inv){
-  if(inv.status==='paid') return {k:'paid', t:'PAID', c:'#16a34a'};
-  if(inv.dueDate && inv.dueDate < today()) return {k:'over', t:'OVERDUE', c:'#dc2626'};
-  return {k:'unpaid', t:'UNPAID', c:'#f59e0b'};
-}
+// Drops any "make checks payable" line (older invoices had it)
+function cleanNotes(n){ return String(n||'').split('\n').filter(function(l){ return !/checks?\s+payable/i.test(l); }).join('\n').trim(); }
+function partsTotal(inv){ var s=0; (inv.items||[]).forEach(function(i){ if(i.kind==='part') s+=num(i.qty)*num(i.price); }); return s; }
 
 // ---------- Data ----------
 SET.onSnapshot(function(s){ if(s.exists) biz = Object.assign({}, DEFAULTS, s.data()); render(); }, function(){});
@@ -361,17 +351,16 @@ function nextNumber(){
 
 // ---------- List ----------
 function hay(inv){
-  var c=inv.client||{}, m=inv.machine||{}, s=status(inv);
+  var c=inv.client||{}, m=inv.machine||{};
   var p=(inv.issueDate||'').split('-');
   return ['#'+inv.num, inv.num, c.name, c.company, c.phone, c.email, c.address, m.title, m.serial, m.hours,
     (inv.items||[]).map(function(i){return i.desc+' '+(i.partNo||'');}).join(' '),
-    inv.notes, s.t, inv.payMethod, inv.issueDate, longDate(inv.issueDate), inv.issueDate?(+p[1])+'/'+(+p[2])+'/'+p[0]:'',
+    inv.notes, inv.issueDate, longDate(inv.issueDate), inv.issueDate?(+p[1])+'/'+(+p[2])+'/'+p[0]:'',
     m2(totals(inv).total), totals(inv).total].join(' ').toLowerCase();
 }
 function inFilter(inv){
-  var s=status(inv).k, d=new Date(), p=(inv.issueDate||'').split('-');
-  if(filter==='unpaid') return s!=='paid';
-  if(filter==='paid') return s==='paid';
+  var d=new Date(), p=(inv.issueDate||'').split('-');
+  if(filter==='last'){ var y=d.getFullYear(), m=d.getMonth()+1, ly=m===1?y-1:y, lm=m===1?12:m-1; return +p[0]===ly && +p[1]===lm; }
   if(filter==='month') return +p[0]===d.getFullYear() && +p[1]===d.getMonth()+1;
   if(filter==='year') return +p[0]===d.getFullYear();
   return true;
@@ -384,7 +373,7 @@ function render(){
   var shown=invoices.filter(inFilter).filter(function(i){ var h=hay(i); return words.every(function(w){ return h.indexOf(w.replace(/^[$#]/,''))>-1 || h.indexOf(w)>-1; }); });
   shown.sort(function(a,b){ return (b.issueDate||'').localeCompare(a.issueDate||'') || num(b.num)-num(a.num); });
   var paid=0, owed=0;
-  shown.forEach(function(i){ var t=totals(i).total; if(i.status==='paid') paid+=t; else owed+=t; });
+  shown.forEach(function(i){ paid+=totals(i).total; owed+=partsTotal(i); });
   $('sCount').textContent=shown.length; $('sPaid').textContent=m0(paid); $('sOwed').textContent=m0(owed);
   $('hint').textContent = q ? shown.length+(shown.length===1?' invoice found':' invoices found') : '';
   if(!invoices.length){ $('list').innerHTML='<div class="empty">No invoices yet.<br>Tap <b>+ New</b> to make the first one.</div>'; return; }
@@ -394,12 +383,12 @@ function render(){
     var p=(i.issueDate||'').split('-'), mk=i.issueDate?MONTHS[+p[1]-1]+' '+p[0]:'No date';
     if(mk!==last){ var mt=shown.filter(function(x){ var xp=(x.issueDate||'').split('-'); return (x.issueDate?MONTHS[+xp[1]-1]+' '+xp[0]:'No date')===mk; }).reduce(function(s,x){return s+totals(x).total;},0);
       html+='<div class="mhd"><span>'+mk+'</span><span>'+m0(mt)+'</span></div>'; last=mk; }
-    var s=status(i), c=i.client||{}, m=i.machine||{};
-    html+='<button class="card" style="--sc:'+s.c+'" data-id="'+i.id+'"><div class="r1"><div>'+
+    var c=i.client||{}, m=i.machine||{};
+    html+='<button class="card" style="--sc:#7c3aed" data-id="'+i.id+'"><div class="r1"><div>'+
       '<div class="num">#'+hl(String(i.num),words)+' · '+shortDate(i.issueDate)+'</div>'+
       '<h3>'+hl(c.company||c.name||'No customer',words)+'</h3>'+
       '<div class="meta">'+hl(m.title||'',words)+(m.serial?' · S/N '+hl(m.serial,words):'')+'</div></div>'+
-      '<div><div class="amt">'+m2(totals(i).total)+'</div><div style="text-align:right"><span class="pill">'+s.t+'</span></div></div></div></button>';
+      '<div><div class="amt">'+m2(totals(i).total)+'</div></div></div></button>';
   });
   $('list').innerHTML=html;
 }
@@ -461,8 +450,6 @@ function calcTotals(){
   $('tSub').textContent=m2(t.sub); $('tDisc').textContent='−'+m2(t.disc); $('tDiscRow').style.display=t.disc?'flex':'none';
   $('tTax').textContent=m2(t.tax); $('tTot').textContent=m2(t.total);
 }
-$('dIssue').addEventListener('change',function(){ if(!editId) $('dDue').value=addDays($('dIssue').value, num(biz.due)); });
-$('pStatus').addEventListener('change',function(){ if($('pStatus').value==='paid' && !$('pDate').value) $('pDate').value=today(); });
 
 var editJobIds=[];
 function openEditor(id, copyFrom){
@@ -479,14 +466,10 @@ function openEditor(id, copyFrom){
   var t=today();
   $('dIssue').value = (!isNew && inv.issueDate) || t;
   $('dService').value = (inv && !copyFrom && inv.serviceDate) || t;
-  $('dDue').value = (!isNew && inv.dueDate) || addDays(t, num(biz.due));
   items = inv ? JSON.parse(JSON.stringify(inv.items||[])) : [];
   $('taxRate').value = 0;
   $('discount').value = 0;
-  $('notes').value = inv ? (inv.notes||'') : biz.notes;
-  $('pStatus').value = (!isNew && inv.status) || 'unpaid';
-  $('pMethod').value = (!isNew && inv.payMethod) || '';
-  $('pDate').value = (!isNew && inv.paidDate) || '';
+  $('notes').value = inv ? cleanNotes(inv.notes) : cleanNotes(biz.notes);
   editJobIds = (!isNew && inv.jobIds) ? inv.jobIds.slice() : [];
   drawItems();
   $('edOv').classList.add('show'); $('edOv').querySelector('.sheet').scrollTop=0;
@@ -498,10 +481,9 @@ $('edSave').onclick=function(){
     num: +$('edNum').dataset.num,
     client:{name:$('cName').value.trim(), company:$('cCompany').value.trim(), phone:$('cPhone').value.trim(), email:$('cEmail').value.trim(), address:$('cAddr').value.trim()},
     machine:{title:$('mTitle').value.trim(), serial:$('mSerial').value.trim(), hours:$('mHours').value.trim()},
-    issueDate:$('dIssue').value, serviceDate:$('dService').value, dueDate:$('dDue').value,
+    issueDate:$('dIssue').value, serviceDate:$('dService').value,
     items: items.filter(function(i){ return (i.desc||'').trim() || num(i.qty)*num(i.price); }).map(function(i){ return {kind:i.kind, desc:(i.desc||'').trim(), partNo:(i.partNo||'').trim(), qty:num(i.qty), price:num(i.price)}; }),
-    taxRate:num($('taxRate').value), discount:num($('discount').value), notes:$('notes').value,
-    status:$('pStatus').value, payMethod:$('pMethod').value, paidDate:$('pStatus').value==='paid'?($('pDate').value||today()):'',
+    taxRate:num($('taxRate').value), discount:num($('discount').value), notes:cleanNotes($('notes').value),
     jobIds: editJobIds, updated: Date.now()
   };
   if(!data.client.name && !data.client.company && !data.items.length){ pop('Add a customer or a line first',''); return; }
@@ -566,7 +548,7 @@ $('jobList').onclick=function(e){
 
 // ---------- Invoice paper ----------
 function paperHTML(inv){
-  var c=inv.client||{}, m=inv.machine||{}, t=totals(inv), s=status(inv);
+  var c=inv.client||{}, m=inv.machine||{}, t=totals(inv), notes=cleanNotes(inv.notes);
   var bizLines = esc(biz.addr||'').replace(/\n/g,'<br>');
   var contact = [biz.email, biz.phone].filter(Boolean).map(esc).join(' | ');
   var headline = [m.title, m.serial?'S/N: '+m.serial:''].filter(Boolean).map(esc).join(' | ');
@@ -575,7 +557,6 @@ function paperHTML(inv){
     return '<tr><td>'+d+'</td><td class="n">'+(+num(i.qty).toFixed(2))+'</td><td class="n">'+m2(num(i.price))+'</td><td class="n">'+m2(num(i.qty)*num(i.price))+'</td></tr>';
   }).join('');
   return '<div class="paper">'+
-    (s.k==='paid' ? '<div class="stamp">PAID<small>'+esc(shortDate(inv.paidDate||'').toUpperCase())+(inv.payMethod?' · '+esc(inv.payMethod.toUpperCase()):'')+'</small></div>' : '')+
     '<div class="p-head">'+
       '<div>'+(biz.logo!==false?'<img class="p-logo" src="bobs-logo.png" alt="" onerror="this.style.display=\'none\'">':'')+'</div>'+
       '<div class="p-biz"><b>'+esc(biz.name)+'</b><br>'+bizLines+(contact?'<br>'+contact:'')+(biz.tag?'<div class="p-tag">'+esc(biz.tag)+'</div>':'')+'</div>'+
@@ -587,16 +568,16 @@ function paperHTML(inv){
     '<hr class="p-thin">'+
     '<div class="p-cols">'+
       '<div><h4>Client</h4>'+[c.company,c.name,c.email,c.phone].filter(Boolean).map(esc).join('<br>')+(c.address?'<br>'+esc(c.address).replace(/\n/g,'<br>'):'')+'</div>'+
-      '<div class="nc"><h4>Invoice Details</h4>Created '+esc(longDate(inv.issueDate))+'<br>'+m2(t.total)+(inv.serviceDate?'<br>Service date '+esc(longDate(inv.serviceDate)):'')+'</div>'+
-      '<div class="nc"><h4>Payment</h4>'+(s.k==='paid' ? 'Paid '+esc(longDate(inv.paidDate))+(inv.payMethod?' ('+esc(inv.payMethod)+')':'') : (inv.dueDate?'Due '+esc(longDate(inv.dueDate)):''))+'<br>'+m2(t.total)+'</div>'+
+      '<div class="nc"><h4>Invoice Details</h4>Date '+esc(longDate(inv.issueDate))+(inv.serviceDate?'<br>Service date '+esc(longDate(inv.serviceDate)):'')+'</div>'+
+      '<div class="nc"><h4>Total</h4><span style="font-size:16px;font-weight:700">'+m2(t.total)+'</span></div>'+
     '</div>'+
-    (inv.notes?'<hr class="p-thin"><div class="p-notes">'+esc(inv.notes)+'</div>':'')+
+    (notes?'<hr class="p-thin"><div class="p-notes">'+esc(notes)+'</div>':'')+
     '<hr class="p-thin">'+
     '<table class="p-table"><thead><tr><th>Services</th><th class="n">Quantity</th><th class="n">Price</th><th class="n">Amount</th></tr></thead><tbody>'+rows+'</tbody></table>'+
     '<div class="p-tot"><div><span>Subtotal</span><span>'+m2(t.sub)+'</span></div>'+
       (t.disc?'<div><span>Discount</span><span>−'+m2(t.disc)+'</span></div>':'')+
       
-      '<div class="g"><span>Total'+(s.k==='paid'?' (paid)':' due')+'</span><span>'+m2(t.total)+'</span></div></div>'+
+      '<div class="g"><span>Total</span><span>'+m2(t.total)+'</span></div></div>'+
     (biz.foot?'<div class="p-foot">'+esc(biz.foot)+'</div>':'')+
   '</div>';
 }
@@ -604,9 +585,9 @@ function showView(id, fallback){
   viewId=id;
   var inv=invoices.filter(function(x){return x.id===id;})[0] || fallback; if(!inv) return;
   $('vPaper').innerHTML=paperHTML(inv);
-  $('vPaid').style.display = inv.status==='paid' ? 'none' : '';
   $('vOv').classList.add('show');
   fitPaper();
+  if(inv.id) setTimeout(function(){ preparePdf(inv).catch(function(){}); }, 300);
 }
 function fitPaper(){
   var w=$('vPaper').parentNode.clientWidth-20, pp=$('vPaper').firstChild; if(!pp||w<=0) return;
@@ -622,10 +603,82 @@ $('vPrint').onclick=function(){
   var old=document.title; document.title='Invoice '+inv.num+' - '+((inv.client||{}).company||(inv.client||{}).name||'');
   setTimeout(function(){ window.print(); document.title=old; }, 50);
 };
-$('vPaid').onclick=function(){
+// ---------- PDF: share by text / save ----------
+function loadScript(src){ return new Promise(function(ok,bad){ var s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=function(){ bad(new Error('Could not load '+src)); }; document.head.appendChild(s); }); }
+var pdfLibs=null;
+function getPdfLibs(){
+  if(window.html2canvas && window.jspdf) return Promise.resolve();
+  pdfLibs = pdfLibs || loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')
+    .then(function(){ return loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'); })
+    .catch(function(e){ pdfLibs=null; throw e; });
+  return pdfLibs;
+}
+function pdfName(inv){
+  var who=((inv.client||{}).company||(inv.client||{}).name||'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  return 'Invoice-'+inv.num+(who?'-'+who:'')+'.pdf';
+}
+function makePdf(inv){
+  return getPdfLibs().then(function(){
+    var box=document.createElement('div');
+    box.style.cssText='position:fixed;left:-10000px;top:0;width:760px;background:#fff';
+    box.innerHTML=paperHTML(inv); document.body.appendChild(box);
+    var img=box.querySelector('img');
+    var ready = (img && !img.complete) ? new Promise(function(ok){ img.onload=img.onerror=ok; }) : Promise.resolve();
+    return ready.then(function(){ return html2canvas(box.firstChild,{scale:2, backgroundColor:'#ffffff', useCORS:true}); })
+      .then(function(canvas){
+        document.body.removeChild(box);
+        var pdf=new window.jspdf.jsPDF({unit:'pt', format:'letter'});
+        var pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
+        var iw=pw, ih=canvas.height*pw/canvas.width;
+        var pageCanvasH=Math.floor(canvas.width*ph/pw), y=0, first=true;
+        while(y<canvas.height){
+          var sliceH=Math.min(pageCanvasH, canvas.height-y);
+          var c=document.createElement('canvas'); c.width=canvas.width; c.height=sliceH;
+          c.getContext('2d').drawImage(canvas,0,y,canvas.width,sliceH,0,0,canvas.width,sliceH);
+          if(!first) pdf.addPage();
+          pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',0,0,pw,sliceH*pw/canvas.width);
+          y+=sliceH; first=false;
+        }
+        return new File([pdf.output('blob')], pdfName(inv), {type:'application/pdf'});
+      }, function(err){ if(box.parentNode) document.body.removeChild(box); throw err; });
+  });
+}
+// Make the PDF as soon as an invoice opens, so Share works right away when tapped
+var pdfCache={key:'', file:null, p:null};
+function pdfKey(inv){ return inv.id+':'+(inv.updated||0)+':'+JSON.stringify(biz); }
+function preparePdf(inv){
+  var k=pdfKey(inv);
+  if(pdfCache.key===k && pdfCache.p) return pdfCache.p;
+  pdfCache={key:k, file:null, p:null};
+  pdfCache.p=makePdf(inv).then(function(f){ if(pdfCache.key===k) pdfCache.file=f; return f; });
+  pdfCache.p.catch(function(){ if(pdfCache.key===k) pdfCache={key:'',file:null,p:null}; });
+  return pdfCache.p;
+}
+function downloadFile(file){
+  var a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download=file.name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+}
+function busy(btn, on, label){ btn.disabled=on; if(on){ btn.dataset.l=btn.textContent; btn.textContent=label; } else if(btn.dataset.l){ btn.textContent=btn.dataset.l; } }
+$('vSave').onclick=function(){
   var inv=invoices.filter(function(x){return x.id===viewId;})[0]; if(!inv) return;
-  INV.doc(viewId).set({status:'paid', paidDate:today(), updated:Date.now()},{merge:true}).catch(function(err){ setSync('error','⚠ Not saved: '+(err.code||err.message)); });
-  kaching(); pop('PAID!', m2(totals(inv).total));
+  var b=$('vSave'); busy(b,true,'Making PDF…');
+  preparePdf(inv).then(function(f){ downloadFile(f); pop('PDF SAVED', f.name); })
+    .catch(function(e){ pop('Couldn’t make the PDF', 'Check the internet and try again'); })
+    .then(function(){ busy(b,false); });
+};
+$('vShare').onclick=function(){
+  var inv=invoices.filter(function(x){return x.id===viewId;})[0]; if(!inv) return;
+  var b=$('vShare'); busy(b,true,'Making PDF…');
+  var c=inv.client||{};
+  var ready = (pdfCache.key===pdfKey(inv) && pdfCache.file) ? Promise.resolve(pdfCache.file) : preparePdf(inv);
+  ready.then(function(f){
+    var msg='Hi'+(c.name?' '+c.name.split(' ')[0]:'')+', here is your invoice #'+inv.num+' from '+biz.name+' for '+m2(totals(inv).total)+'. Thank you!';
+    if(navigator.canShare && navigator.canShare({files:[f]})){
+      return navigator.share({files:[f], title:'Invoice #'+inv.num, text:msg}).catch(function(e){ if(e && e.name!=='AbortError') throw e; });
+    }
+    downloadFile(f); pop('PDF SAVED','Sharing isn’t available here, so it was saved');
+  }).catch(function(e){ pop('Couldn’t share', 'Check the internet and try again'); })
+    .then(function(){ busy(b,false); });
 };
 $('vDup').onclick=function(){
   var inv=invoices.filter(function(x){return x.id===viewId;})[0]; if(!inv) return;
@@ -642,14 +695,14 @@ $('cfYes').onclick=function(){
 // ---------- Settings ----------
 $('setBtn').onclick=function(){
   $('bName').value=biz.name; $('bAddr').value=biz.addr; $('bPhone').value=biz.phone; $('bEmail').value=biz.email;
-  $('bLogo').checked=biz.logo!==false; $('bRate').value=biz.rate||''; $('bDue').value=biz.due;
+  $('bLogo').checked=biz.logo!==false; $('bRate').value=biz.rate||'';
   $('bNext').value=nextNumber(); $('bNotes').value=biz.notes; $('bFoot').value=biz.foot; $('bTag').value=biz.tag||'';
   $('setOv').classList.add('show');
 };
 $('setCancel').onclick=function(){ $('setOv').classList.remove('show'); };
 $('setSave').onclick=function(){
   var d={name:$('bName').value.trim(), addr:$('bAddr').value.trim(), phone:$('bPhone').value.trim(), email:$('bEmail').value.trim(),
-    logo:$('bLogo').checked, rate:num($('bRate').value), tax:0, due:num($('bDue').value)||0,
+    logo:$('bLogo').checked, rate:num($('bRate').value), tax:0, 
     next:num($('bNext').value)||1001, notes:$('bNotes').value, foot:$('bFoot').value.trim(), tag:$('bTag').value.trim()};
   biz=Object.assign({},DEFAULTS,d);
   SET.set(d,{merge:true}).catch(function(err){ setSync('error','⚠ Not saved: '+(err.code||err.message)); });

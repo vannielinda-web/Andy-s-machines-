@@ -125,6 +125,10 @@ textarea.field{min-height:58px;resize:vertical}
 .cf{background:#fff;border-radius:16px;padding:20px;max-width:340px;width:90%;align-self:center;text-align:center}
 .cf p{margin:6px 0 16px;color:var(--muted);font-size:14px}
 #printArea{display:none}
+body.customer > *:not(#cust):not(#printArea):not(.pop){display:none!important}
+body.customer #cust{display:block!important;padding:12px}
+.cbar{display:flex;gap:8px;margin-bottom:10px}
+#cPaper{transform-origin:top left}
 @media print{
   @page{size:letter;margin:0.4in}
   body{background:#fff;padding:0}
@@ -136,6 +140,10 @@ textarea.field{min-height:58px;resize:vertical}
 </head>
 <body>
 
+<div id="cust" style="display:none">
+  <div class="cbar"><button class="btn main" id="cSave">⬇ Save PDF</button><button class="btn" id="cPrint">🖨 Print</button></div>
+  <div class="paperwrap" id="cWrap"><div id="cPaper"><div class="empty">Loading invoice…</div></div></div>
+</div>
 <div class="hdr">
   <h1>🧾 Invoices</h1>
   <div class="hdr-r">
@@ -234,7 +242,7 @@ textarea.field{min-height:58px;resize:vertical}
 <div class="ov" id="vOv"><div class="sheet" style="max-width:860px">
   <div class="vbar">
     <button class="btn" id="vBack">← Back</button>
-    <button class="btn main" id="vShare">💬 Share / Text</button>
+    <button class="btn main" id="vShare">💬 Text to customer</button>
     <button class="btn" id="vSave">⬇ Save PDF</button>
     <button class="btn" id="vPrint">🖨 Print</button>
     <button class="btn" id="vEdit">✏️ Edit</button>
@@ -296,6 +304,8 @@ try { db.enablePersistence({synchronizeTabs:true}).catch(function(){}); } catch(
 var INV = db.collection('invoices');
 var SET = db.collection('invoice_settings').doc('business');
 var JOBS = db.collection('jobs');
+// A customer opening a texted link (…/invoices.html?v=ID) only sees that one invoice
+var CUSTOMER_ID = new URLSearchParams(location.search).get('v');
 
 var DEFAULTS = {
   name:"BOB'S SHOP", addr:"124 Star Lake Rd\nBloomingdale, NJ 07403", phone:"(201) 742-7828", email:"",
@@ -331,6 +341,7 @@ function cleanNotes(n){ return String(n||'').split('\n').filter(function(l){ ret
 function partsTotal(inv){ var s=0; (inv.items||[]).forEach(function(i){ if(i.kind==='part') s+=num(i.qty)*num(i.price); }); return s; }
 
 // ---------- Data ----------
+if(!CUSTOMER_ID){
 SET.onSnapshot(function(s){ if(s.exists) biz = Object.assign({}, DEFAULTS, s.data()); render(); }, function(){});
 INV.onSnapshot(function(snap){
   invoices = snap.docs.map(function(d){ var o=d.data(); o.id=d.id; return o; });
@@ -343,6 +354,7 @@ INV.onSnapshot(function(snap){
 });
 
 JOBS.onSnapshot(function(s){ jobsCache=s.docs.map(function(d){var o=d.data(); o.id=d.id; return o;}).sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}); fillLists(); }, function(){});
+}
 
 function nextNumber(){
   var mx = 0; invoices.forEach(function(i){ mx=Math.max(mx, num(i.num)); });
@@ -668,25 +680,17 @@ $('vSave').onclick=function(){
 };
 $('vShare').onclick=function(){
   var inv=invoices.filter(function(x){return x.id===viewId;})[0]; if(!inv) return;
-  var b=$('vShare'), c=inv.client||{};
-  var f=(pdfCache.key===pdfKey(inv)) ? pdfCache.file : null;
-  if(!f){
-    // Phones only allow the share menu right after a tap, so get the PDF ready first, then ask for one more tap
-    busy(b,true,'Getting PDF ready…');
-    preparePdf(inv).then(function(){ busy(b,false); b.textContent='💬 Tap again to share'; pop('PDF READY','Tap Share again'); })
-      .catch(function(e){ busy(b,false); pop('Couldn’t make the PDF', (e&&e.message||'').slice(0,60)); });
-    return;
-  }
-  b.textContent='💬 Share / Text';
-  var msg='Hi'+(c.name?' '+c.name.split(' ')[0]:'')+', here is your invoice #'+inv.num+' from '+biz.name+' for '+m2(totals(inv).total)+'. Thank you!';
-  var data={files:[f], title:'Invoice #'+inv.num, text:msg};
-  var ok=false; try { ok = !!(navigator.share && navigator.canShare && navigator.canShare({files:[f]})); } catch(x){ ok=false; }
-  if(!ok){ downloadFile(f); pop('SAVED TO DOWNLOADS','This browser can’t share files. Attach it in Messages.'); return; }
-  navigator.share(data).catch(function(e){
-    if(e && e.name==='AbortError') return;
-    downloadFile(f); pop('SAVED TO DOWNLOADS','Share didn’t open ('+(e&&e.name||'error')+'). Attach it in Messages.');
-  });
+  location.href=smsUrl(inv);
 };
+function niceName(n){ n=n||''; return n===n.toUpperCase() ? n.toLowerCase().replace(/(^|\s)\S/g,function(c){return c.toUpperCase();}) : n; }
+function smsUrl(inv){
+  var c=inv.client||{};
+  var link=location.origin+location.pathname+'?v='+encodeURIComponent(inv.id);
+  var msg='Hi'+(c.name?' '+c.name.split(' ')[0]:'')+', here is your invoice #'+inv.num+' from '+niceName(biz.name)+' for '+m2(totals(inv).total)+':\n'+link+'\nThank you!';
+  var phone=(c.phone||'').replace(/[^\d+]/g,'');
+  var ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
+  return 'sms:'+phone+(ios?'&':'?')+'body='+encodeURIComponent(msg);
+}
 $('vDup').onclick=function(){
   var inv=invoices.filter(function(x){return x.id===viewId;})[0]; if(!inv) return;
   $('vOv').classList.remove('show'); openEditor(null, inv);
@@ -715,6 +719,30 @@ $('setSave').onclick=function(){
   SET.set(d,{merge:true}).catch(function(err){ setSync('error','⚠ Not saved: '+(err.code||err.message)); });
   $('setOv').classList.remove('show'); pop('SAVED','');
 };
+
+// ---------- Customer page ----------
+function fitCust(){
+  var w=$('cWrap').clientWidth-20, pp=$('cPaper').firstChild; if(!pp||w<=0) return;
+  var s=Math.min(1,w/760); $('cPaper').style.width='760px'; $('cPaper').style.transform='scale('+s+')';
+  $('cWrap').style.height=(pp.offsetHeight*s+20)+'px';
+}
+if(CUSTOMER_ID){
+  document.body.classList.add('customer');
+  document.title='Invoice';
+  var custInv=null;
+  Promise.all([SET.get(), INV.doc(CUSTOMER_ID).get()]).then(function(res){
+    if(res[0].exists) biz=Object.assign({},DEFAULTS,res[0].data());
+    if(!res[1].exists){ $('cPaper').innerHTML='<div class="empty">This invoice isn’t available.</div>'; return; }
+    custInv=res[1].data(); custInv.id=res[1].id;
+    document.title='Invoice #'+custInv.num+' - '+biz.name;
+    $('cPaper').innerHTML=paperHTML(custInv); fitCust();
+    var img=$('cPaper').querySelector('img'); if(img) img.addEventListener('load',fitCust);
+  }).catch(function(){ $('cPaper').innerHTML='<div class="empty">Couldn’t load the invoice. Check the internet and try again.</div>'; });
+  window.addEventListener('resize',fitCust);
+  $('cSave').onclick=function(){ if(!custInv) return; var b=$('cSave'); busy(b,true,'Making PDF…');
+    makePdf(custInv).then(function(f){ downloadFile(f); }).catch(function(){ pop('Couldn’t make the PDF','Try Print instead'); }).then(function(){ busy(b,false); }); };
+  $('cPrint').onclick=function(){ if(!custInv) return; $('printArea').innerHTML=paperHTML(custInv); setTimeout(function(){ window.print(); },50); };
+}
 
 // ---------- Pop-up + sounds ----------
 var popT;

@@ -679,7 +679,7 @@ function paperHTML(inv){
   }
   var rows = multi
     ? ms.map(function(mm,k){
-        var lbl=ms.length>1?'Machine '+(k+1)+' repair':'Repair';
+        var lbl='Repair';
         var head=[lbl+': '+(mm.title||''), mm.serial?'S/N: '+mm.serial:'', mm.hours?'Hours / mileage: '+mm.hours:''].filter(Boolean).map(esc).join(' &nbsp;|&nbsp; ');
         return '<tr class="msec'+(k===0?' first':'')+'"><td colspan="4">'+head+'</td></tr>'+(mm.items||[]).map(itemRow).join('')+
           '<tr class="msub"><td colspan="3" class="n">'+lbl+' subtotal</td><td class="n">'+m2(itemsSum(mm.items))+'</td></tr>';

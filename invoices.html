@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#2563eb">
-<title>Bob's Shop Invoices</title>
+<title>Invoices</title>
 <link rel="manifest" href="invoices-manifest.json">
 <link rel="icon" href="invoices-icon-192.png">
 <link rel="apple-touch-icon" href="invoices-icon-192.png">
@@ -73,6 +73,17 @@ textarea.field{min-height:58px;resize:vertical}
 .li .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px;align-items:end}
 .li .am{font-weight:800;text-align:right;padding-bottom:9px}
 .addrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.mc{border:2px solid #c7d2fe;border-radius:14px;padding:4px 10px 12px;margin-top:12px;background:#f8faff}
+.mc .mh{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.mc .mh b{font-size:15px;color:#4338ca}
+.mc .msub{text-align:right;font-weight:800;color:#4338ca;margin-top:8px;font-size:14px}
+.sc{border:2px solid #bbf7d0;border-radius:14px;padding:4px 10px 12px;margin-top:12px;background:#f0fdf4}
+.sc .mh b{color:#15803d}
+.ab.adds{display:block;width:100%;margin-top:10px;background:linear-gradient(120deg,#22c55e,#15803d);color:#fff;border:none;padding:13px;font-size:15px}
+.ab.addm{display:block;width:100%;margin-top:12px;background:linear-gradient(120deg,#2563eb,#7c3aed);color:#fff;border:none;padding:13px;font-size:15px}
+.p-table tr.msec td{border-top:2.5px solid #111;border-bottom:1px solid #111;padding:12px 4px 7px;font-size:13px;font-weight:700;background:#f3f4f6}
+.p-table tr.msec.first td{border-top:none}
+.p-table tr.msub td{font-weight:700;border-bottom:none;padding-bottom:16px}
 .ab{flex:1;min-width:30%;border:1.5px dashed #a5b4fc;background:#eef2ff;color:#4338ca;border-radius:10px;padding:10px 6px;font-weight:700;font-size:13px}
 .tots{margin-top:14px;background:linear-gradient(120deg,#eef2ff,#fae8ff);border-radius:12px;padding:12px 14px}
 .tr{display:flex;justify-content:space-between;font-size:14px;padding:2px 0}
@@ -94,7 +105,7 @@ textarea.field{min-height:58px;resize:vertical}
 /* the invoice paper */
 .paper{background:#fff;color:#111;width:760px;max-width:none;margin:0 auto;padding:44px 48px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.35;position:relative}
 .p-head{display:grid;grid-template-columns:180px 1fr 160px;gap:16px;align-items:start}
-.p-logo{width:170px;height:auto;display:block}
+.p-logo{width:165px;height:auto;display:block;margin-top:8px}
 .p-tag{font-size:10px;color:#166534;font-weight:700;margin-top:4px;line-height:1.35}
 .p-biz{font-size:12px;text-transform:uppercase;line-height:1.5}
 .p-biz b{font-size:14px}
@@ -116,6 +127,8 @@ textarea.field{min-height:58px;resize:vertical}
 .p-tot{margin-left:auto;width:270px;margin-top:12px}
 .p-tot div{display:flex;justify-content:space-between;padding:3px 0}
 .p-tot .g{font-size:16px;font-weight:700;border-top:2px solid #111;margin-top:4px;padding-top:6px}
+.p-pay{margin-top:18px;border:2px solid #111;padding:10px 12px;font-size:12px;font-weight:700;text-transform:uppercase;line-height:1.5}
+.p-pay span{display:block;font-size:11px;letter-spacing:.5px;margin-bottom:2px}
 .p-foot{margin-top:28px;text-align:center;font-size:12px;color:#333}
 .stamp{position:absolute;right:56px;top:150px;transform:rotate(-8deg);border:4px double #16a34a;color:#16a34a;font:900 30px "Courier New",monospace;padding:4px 14px;text-align:center;letter-spacing:3px}
 .stamp small{display:block;font-size:14px;letter-spacing:1px}
@@ -176,7 +189,7 @@ body.customer #cust{display:block!important;padding:12px}
 <!-- Editor -->
 <div class="ov" id="edOv"><div class="sheet">
   <h2 id="edTitle">New invoice</h2>
-  <div class="small" id="edNum"></div>
+  <div style="display:flex;align-items:center;gap:8px;margin-top:4px"><label for="edNum" style="margin:0">Invoice #</label><input class="field" id="edNum" type="number" inputmode="numeric" style="width:120px;padding:6px 8px"></div>
 
   <div class="sec">Customer</div>
   <div class="g2">
@@ -190,12 +203,6 @@ body.customer #cust{display:block!important;padding:12px}
   <label for="cAddr">Address</label><textarea class="field" id="cAddr" placeholder="Street&#10;Town, NJ ZIP"></textarea>
   <div class="small">Pick a past customer from the list and the rest fills in.</div>
 
-  <div class="sec">Machine</div>
-  <label for="mTitle">Machine (year, brand, model)</label><input class="field" id="mTitle" list="machList" placeholder="2021 Stihl MS 271">
-  <div class="g2">
-    <div><label for="mSerial">Serial #</label><input class="field" id="mSerial"></div>
-    <div><label for="mHours">Hours / mileage</label><input class="field" id="mHours" placeholder="(optional)"></div>
-  </div>
 
   <div class="sec">Dates</div>
   <div class="g2">
@@ -203,13 +210,13 @@ body.customer #cust{display:block!important;padding:12px}
     <div><label for="dService">Service date</label><input class="field" id="dService" type="date"></div>
   </div>
 
-  <div class="sec">Services &amp; parts</div>
-  <div id="items"></div>
-  <div class="addrow">
-    <button class="ab" id="addLabor">+ Labor</button>
-    <button class="ab" id="addPart">+ Part</button>
-    <button class="ab" id="addJob">+ From Labor Ledger</button>
-  </div>
+  <div class="sec">Machines &amp; work</div>
+  <div id="machines"></div>
+  <button class="ab addm" id="addMachine">+ Add another machine</button>
+
+  <div class="sec" style="background:linear-gradient(120deg,#16a34a,#0d9488)">Machines sold</div>
+  <div id="sales"></div>
+  <button class="ab adds" id="addSale">+ Sell a machine</button>
 
   <input type="hidden" id="taxRate" value="0">
   <input type="hidden" id="discount" value="0">
@@ -264,13 +271,14 @@ body.customer #cust{display:block!important;padding:12px}
     <div><label for="bPhone">Phone</label><input class="field" id="bPhone"></div>
     <div><label for="bEmail">Email</label><input class="field" id="bEmail"></div>
   </div>
-  <label><input type="checkbox" id="bLogo" style="width:auto;margin-right:6px">Show the Bob's Shop logo</label>
+  <label><input type="checkbox" id="bLogo" style="width:auto;margin-right:6px">Show the logo</label>
   <div class="g2">
     <div><label for="bRate">Labor rate ($/hr)</label><input class="field" id="bRate" type="number" inputmode="decimal"></div>
   </div>
   <label for="bNext">Next invoice #</label><input class="field" id="bNext" type="number" inputmode="numeric">
   <label for="bNotes">Default notes</label><textarea class="field" id="bNotes" style="min-height:90px"></textarea>
   <label for="bTag">Services line (under the address)</label><textarea class="field" id="bTag"></textarea>
+  <label for="bPay">Payment line (prints on every invoice)</label><textarea class="field" id="bPay"></textarea>
   <label for="bLink">Invoice link website (for texts)</label><input class="field" id="bLink" placeholder="Leave empty to use the current link">
   <div class="small">Example: bobs-shop-nj.github.io</div>
   <label for="bFoot">Bottom line</label><input class="field" id="bFoot">
@@ -310,9 +318,10 @@ var JOBS = db.collection('jobs');
 var CUSTOMER_ID = new URLSearchParams(location.search).get('v');
 
 var DEFAULTS = {
-  name:"BOB'S SHOP", addr:"124 Star Lake Rd\nBloomingdale, NJ 07403", phone:"(201) 742-7828", email:"",
+  name:"STATEWIDE EQUIPMENT", addr:"124 Star Lake Rd\nBloomingdale, NJ 07403", phone:"(201) 742-7828", email:"",
   logo:true, rate:0, tax:0, due:7, next:1001,
   notes:"",
+  pay:"We accept cash, Zelle or business checks. Please make checks payable to \"Statewide\".",
   foot:"Thank you for your business!",
   tag:"Chainsaws, concrete saws, landscaping, construction and snow equipment repair. 2 and 4 cycle. All brands welcome."
 };
@@ -333,18 +342,31 @@ function setSync(c,t){ $('sync').className='sync'+(c?' '+c:''); $('sync').textCo
 
 function totals(inv){
   inv = Object.assign({}, inv, {taxRate:0, discount:0});
-  var sub=0; (inv.items||[]).forEach(function(it){ sub+=num(it.qty)*num(it.price); });
+  var sub=itemsSum(allItems(inv))+salesSum(inv);
   var disc=Math.min(num(inv.discount),sub), tax=(sub-disc)*num(inv.taxRate)/100;
   tax=Math.round(tax*100)/100;
   return {sub:sub, disc:disc, tax:tax, total:Math.round((sub-disc+tax)*100)/100};
 }
 // Drops any "make checks payable" line (older invoices had it)
 function cleanNotes(n){ return String(n||'').split('\n').filter(function(l){ return !/checks?\s+payable/i.test(l); }).join('\n').trim(); }
-function partsTotal(inv){ var s=0; (inv.items||[]).forEach(function(i){ if(i.kind==='part') s+=num(i.qty)*num(i.price); }); return s; }
+// An invoice can hold several machines, each with its own work and parts.
+// Older invoices only have one machine + items; treat those as a single machine.
+function machinesOf(inv){
+  if(inv.machines && inv.machines.length) return inv.machines;
+  var m=inv.machine||{};
+  return [{title:m.title||'', serial:m.serial||'', hours:m.hours||'', items:inv.items||[]}];
+}
+function salesOf(inv){ return (inv.sales||[]).filter(function(s){ return s.name||s.brand||s.model||s.serial||s.desc||num(s.price); }); }
+function salesSum(inv){ var t=0; salesOf(inv).forEach(function(s){ t+=num(s.price); }); return t; }
+function repairMachines(inv){ return machinesOf(inv).filter(function(m){ return m.title||m.serial||m.hours||(m.items||[]).length; }); }
+function saleTitle(s){ var bm=[s.brand,s.model].filter(Boolean).join(' '); return 'Sale of '+(s.name ? s.name+(bm?' - '+bm:'') : (bm||'machine')); }
+function allItems(inv){ var a=[]; machinesOf(inv).forEach(function(m){ a=a.concat(m.items||[]); }); return a; }
+function itemsSum(list){ var s=0; (list||[]).forEach(function(i){ s+=num(i.qty)*num(i.price); }); return s; }
+function partsTotal(inv){ var s=0; allItems(inv).forEach(function(i){ if(i.kind==='part') s+=num(i.qty)*num(i.price); }); return s; }
 
 // ---------- Data ----------
 if(!CUSTOMER_ID){
-SET.onSnapshot(function(s){ if(s.exists) biz = Object.assign({}, DEFAULTS, s.data()); render(); }, function(){});
+SET.onSnapshot(function(s){ if(s.exists) biz = fixBiz(Object.assign({}, DEFAULTS, s.data())); render(); }, function(){});
 INV.onSnapshot(function(snap){
   invoices = snap.docs.map(function(d){ var o=d.data(); o.id=d.id; return o; });
   setSync(snap.metadata.hasPendingWrites?'saving':'', snap.metadata.hasPendingWrites?'Saving…':'✓ Saved & synced');
@@ -358,17 +380,21 @@ INV.onSnapshot(function(snap){
 JOBS.onSnapshot(function(s){ jobsCache=s.docs.map(function(d){var o=d.data(); o.id=d.id; return o;}).sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}); fillLists(); }, function(){});
 }
 
+// Invoice numbers always start at 1001
+// The shop was renamed: old saved settings still say Bob's Shop
+function fixBiz(b){ if(/^\s*bob'?s\s+shop\s*$/i.test(b.name||'')) b.name=DEFAULTS.name; if(b.pay===undefined) b.pay=DEFAULTS.pay; return b; }
 function nextNumber(){
   var mx = 0; invoices.forEach(function(i){ mx=Math.max(mx, num(i.num)); });
-  return Math.max(num(biz.next)||1001, mx+1);
+  return Math.max(1001, num(biz.next)||0, mx+1);
 }
 
 // ---------- List ----------
 function hay(inv){
-  var c=inv.client||{}, m=inv.machine||{};
+  var c=inv.client||{};
+  var ms=machinesOf(inv), mtxt=ms.map(function(m){ return [m.title,m.serial,m.hours].join(' '); }).join(' ')+' '+salesOf(inv).map(function(s){ return ['sold sale',s.name,s.brand,s.model,s.serial,s.desc].join(' '); }).join(' ');
   var p=(inv.issueDate||'').split('-');
-  return ['#'+inv.num, inv.num, c.name, c.company, c.phone, c.email, c.address, m.title, m.serial, m.hours,
-    (inv.items||[]).map(function(i){return i.desc+' '+(i.partNo||'');}).join(' '),
+  return ['#'+inv.num, inv.num, c.name, c.company, c.phone, c.email, c.address, mtxt,
+    allItems(inv).map(function(i){return i.desc+' '+(i.partNo||'');}).join(' '),
     inv.notes, inv.issueDate, longDate(inv.issueDate), inv.issueDate?(+p[1])+'/'+(+p[2])+'/'+p[0]:'',
     m2(totals(inv).total), totals(inv).total].join(' ').toLowerCase();
 }
@@ -397,11 +423,11 @@ function render(){
     var p=(i.issueDate||'').split('-'), mk=i.issueDate?MONTHS[+p[1]-1]+' '+p[0]:'No date';
     if(mk!==last){ var mt=shown.filter(function(x){ var xp=(x.issueDate||'').split('-'); return (x.issueDate?MONTHS[+xp[1]-1]+' '+xp[0]:'No date')===mk; }).reduce(function(s,x){return s+totals(x).total;},0);
       html+='<div class="mhd"><span>'+mk+'</span><span>'+m0(mt)+'</span></div>'; last=mk; }
-    var c=i.client||{}, m=i.machine||{};
+    var c=i.client||{}, ms=machinesOf(i), m=ms[0]||{};
     html+='<button class="card" style="--sc:#7c3aed" data-id="'+i.id+'"><div class="r1"><div>'+
       '<div class="num">#'+hl(String(i.num),words)+' · '+shortDate(i.issueDate)+'</div>'+
       '<h3>'+hl(c.company||c.name||'No customer',words)+'</h3>'+
-      '<div class="meta">'+hl(m.title||'',words)+(m.serial?' · S/N '+hl(m.serial,words):'')+'</div></div>'+
+      '<div class="meta">'+hl(m.title||'',words)+(m.serial?' · S/N '+hl(m.serial,words):'')+(ms.length>1?' <b>+'+(ms.length-1)+' more</b>':'')+(salesOf(i).length?' <b style="color:#15803d">· '+salesOf(i).length+' sold</b>':'')+'</div></div>'+
       '<div><div class="amt">'+m2(totals(i).total)+'</div></div></div></button>';
   });
   $('list').innerHTML=html;
@@ -421,7 +447,8 @@ function uniqBy(arr,key){ var s={}; return arr.filter(function(o){ var k=(key(o)
 function fillLists(){
   var cs=uniqBy(allClients(), function(c){return c.name;});
   $('custList').innerHTML=cs.map(function(c){return '<option value="'+esc(c.name)+'">'+esc(c.company||'')+'</option>';}).join('');
-  var ms=uniqBy(invoices.map(function(i){return i.machine||{};}), function(m){return m.title;});
+  var all=[]; invoices.forEach(function(i){ all=all.concat(machinesOf(i)); });
+  var ms=uniqBy(all, function(m){return m.title;});
   $('machList').innerHTML=ms.map(function(m){return '<option value="'+esc(m.title)+'">';}).join('');
 }
 $('cName').addEventListener('change',function(){
@@ -435,6 +462,8 @@ $('cName').addEventListener('change',function(){
 });
 
 // ---------- Editor ----------
+var machines=[], sales=[], jobTarget=0;
+function newMachine(){ return {title:'', serial:'', hours:'', items:[]}; }
 function itemHTML(it,i){
   var lab = it.kind==='part';
   return '<div class="li" style="--lc:'+(lab?'#0ea5e9':'#7c3aed')+'" data-i="'+i+'">'+
@@ -443,21 +472,67 @@ function itemHTML(it,i){
     (lab?'<input class="field" data-f="partNo" placeholder="Part # (optional)" style="margin-top:6px" value="'+esc(it.partNo||'')+'">':'')+
     '<div class="row"><div><label>'+(lab?'Qty':'Hours / qty')+'</label><input class="field" data-f="qty" type="number" inputmode="decimal" step="0.25" value="'+esc(it.qty)+'"></div>'+
     '<div><label>'+(lab?'Price each':'Rate / price')+'</label><input class="field" data-f="price" type="number" inputmode="decimal" step="0.01" value="'+esc(it.price)+'"></div>'+
-    '<div class="am" data-am="'+i+'">'+m2(num(it.qty)*num(it.price))+'</div></div></div>';
+    '<div class="am" data-am>'+m2(num(it.qty)*num(it.price))+'</div></div></div>';
 }
-function drawItems(){ $('items').innerHTML = items.length ? items.map(itemHTML).join('') : '<div class="small" style="margin-top:8px">No lines yet. Add labor, parts, or a job from Labor Ledger.</div>'; calcTotals(); }
-$('items').addEventListener('input',function(e){
-  var el=e.target, box=el.closest('.li'); if(!box||!el.dataset.f) return;
-  var i=+box.dataset.i; items[i][el.dataset.f]=el.value;
-  box.querySelector('[data-am]').textContent=m2(num(items[i].qty)*num(items[i].price)); calcTotals();
+function machineHTML(m,k){
+  return '<div class="mc" data-m="'+k+'">'+
+    '<div class="mh"><b>🛠 Machine '+(k+1)+'</b>'+(machines.length>1?'<button class="x" data-delm="'+k+'" style="border:none;background:#fee2e2;color:#991b1b;border-radius:7px;font-size:12px;font-weight:700;padding:4px 9px">Remove machine</button>':'')+'</div>'+
+    '<label>Machine (year, brand, model)</label><input class="field" data-mf="title" list="machList" placeholder="2021 Stihl MS 271" value="'+esc(m.title)+'">'+
+    '<div class="g2"><div><label>Serial #</label><input class="field" data-mf="serial" value="'+esc(m.serial)+'"></div>'+
+    '<div><label>Hours / mileage</label><input class="field" data-mf="hours" placeholder="(optional)" value="'+esc(m.hours)+'"></div></div>'+
+    '<div class="mitems">'+((m.items||[]).length ? m.items.map(itemHTML).join('') : '<div class="small" style="margin-top:8px">No work yet. Add labor, parts, or a job from Labor Ledger.</div>')+'</div>'+
+    '<div class="addrow"><button class="ab" data-add="labor">+ Labor</button><button class="ab" data-add="part">+ Part</button><button class="ab" data-add="job">+ From Labor Ledger</button></div>'+
+    (machines.length>1?'<div class="msub">This machine: <span data-msub>'+m2(itemsSum(m.items))+'</span></div>':'')+
+  '</div>';
+}
+function saleHTML(s,k){
+  function f(key,label,ph,type){ return '<div><label>'+label+'</label><input class="field" data-sf="'+key+'"'+(type?' type="number" inputmode="decimal" step="0.01"':'')+' placeholder="'+(ph||'')+'" value="'+esc(s[key])+'"></div>'; }
+  return '<div class="sc" data-s="'+k+'">'+
+    '<div class="mh"><b>💲 Machine sold'+(sales.length>1?' '+(k+1):'')+'</b><button class="x" data-dels="'+k+'" style="border:none;background:#fee2e2;color:#991b1b;border-radius:7px;font-size:12px;font-weight:700;padding:4px 9px">Remove</button></div>'+
+    '<label>Machine name</label><input class="field" data-sf="name" placeholder="Chainsaw" value="'+esc(s.name)+'">'+
+    '<div class="g2">'+f('brand','Brand','Stihl')+f('model','Model','MS 271')+'</div>'+
+    '<div class="g2">'+f('serial','Serial #','')+f('price','Price ($)','0','num')+'</div>'+
+    '<label>Description</label><textarea class="field" data-sf="desc" placeholder="Used, runs great, new chain">'+esc(s.desc)+'</textarea>'+
+  '</div>';
+}
+function drawSales(){ $('sales').innerHTML = sales.map(saleHTML).join(''); calcTotals(); }
+$('sales').addEventListener('input',function(e){ var el=e.target, sc=el.closest('.sc'); if(!sc||!el.dataset.sf) return; sales[+sc.dataset.s][el.dataset.sf]=el.value; if(el.dataset.sf==='price') calcTotals(); });
+$('sales').addEventListener('click',function(e){ var d=e.target.closest('[data-dels]'); if(d){ sales.splice(+d.dataset.dels,1); drawSales(); } });
+$('addSale').onclick=function(){
+  sales.push({name:'',brand:'',model:'',serial:'',desc:'',price:''}); drawSales();
+  var cards=$('sales').querySelectorAll('.sc'), last=cards[cards.length-1];
+  if(last){ last.scrollIntoView({behavior:'smooth',block:'start'}); last.querySelector('[data-sf=name]').focus(); }
+};
+function drawMachines(){ $('machines').innerHTML = machines.map(machineHTML).join(''); calcTotals(); }
+// keep old name working for code that still calls it
+function drawItems(){ drawMachines(); }
+$('machines').addEventListener('input',function(e){
+  var el=e.target, mc=el.closest('.mc'); if(!mc) return; var m=machines[+mc.dataset.m];
+  if(el.dataset.mf){ m[el.dataset.mf]=el.value; return; }
+  var box=el.closest('.li'); if(!box||!el.dataset.f) return;
+  var it=m.items[+box.dataset.i]; it[el.dataset.f]=el.value;
+  box.querySelector('[data-am]').textContent=m2(num(it.qty)*num(it.price));
+  var ms=mc.querySelector('[data-msub]'); if(ms) ms.textContent=m2(itemsSum(m.items));
+  calcTotals();
 });
-$('items').addEventListener('click',function(e){ var d=e.target.closest('[data-del]'); if(d){ items.splice(+d.dataset.del,1); drawItems(); } });
-$('addLabor').onclick=function(){ items.push({kind:'labor',desc:'',qty:1,price:biz.rate||''}); drawItems(); focusLast(); };
-$('addPart').onclick=function(){ items.push({kind:'part',desc:'',partNo:'',qty:1,price:''}); drawItems(); focusLast(); };
-function focusLast(){ var t=$('items').querySelectorAll('textarea'); if(t.length) t[t.length-1].focus(); }
+$('machines').addEventListener('click',function(e){
+  var mc=e.target.closest('.mc'); if(!mc) return; var k=+mc.dataset.m, m=machines[k];
+  var d=e.target.closest('[data-del]'); if(d){ m.items.splice(+d.dataset.del,1); drawMachines(); return; }
+  var dm=e.target.closest('[data-delm]'); if(dm){ machines.splice(k,1); drawMachines(); return; }
+  var a=e.target.closest('[data-add]'); if(!a) return;
+  if(a.dataset.add==='labor'){ m.items.push({kind:'labor',desc:'',qty:1,price:biz.rate||''}); drawMachines(); focusLastIn(k); }
+  else if(a.dataset.add==='part'){ m.items.push({kind:'part',desc:'',partNo:'',qty:1,price:''}); drawMachines(); focusLastIn(k); }
+  else { jobTarget=k; openJobPicker(); }
+});
+$('addMachine').onclick=function(){
+  machines.push(newMachine()); drawMachines();
+  var cards=$('machines').querySelectorAll('.mc'); var last=cards[cards.length-1];
+  if(last){ last.scrollIntoView({behavior:'smooth',block:'start'}); var t=last.querySelector('[data-mf=title]'); if(t) t.focus(); }
+};
+function focusLastIn(k){ var mc=$('machines').querySelectorAll('.mc')[k]; if(!mc) return; var t=mc.querySelectorAll('textarea'); if(t.length) t[t.length-1].focus(); }
 ['taxRate','discount'].forEach(function(id){ $(id).addEventListener('input',calcTotals); });
 function formInv(){
-  return { items:items, taxRate:num($('taxRate').value), discount:num($('discount').value) };
+  return { machines:machines, sales:sales, taxRate:num($('taxRate').value), discount:num($('discount').value) };
 }
 function calcTotals(){
   var t=totals(formInv());
@@ -472,15 +547,15 @@ function openEditor(id, copyFrom){
   var isNew = !id;
   var n = isNew ? nextNumber() : inv.num;
   $('edTitle').textContent = isNew ? 'New invoice' : 'Edit invoice';
-  $('edNum').textContent = 'Invoice #'+n;
-  $('edNum').dataset.num = n;
-  var c=(inv&&inv.client)||{}, m=(inv&&inv.machine)||{};
+  $('edNum').value = n;
+  var c=(inv&&inv.client)||{};
   $('cName').value=c.name||''; $('cCompany').value=c.company||''; $('cPhone').value=c.phone||''; $('cEmail').value=c.email||''; $('cAddr').value=c.address||'';
-  $('mTitle').value=m.title||''; $('mSerial').value=m.serial||''; $('mHours').value=m.hours||'';
   var t=today();
   $('dIssue').value = (!isNew && inv.issueDate) || t;
   $('dService').value = (inv && !copyFrom && inv.serviceDate) || t;
-  items = inv ? JSON.parse(JSON.stringify(inv.items||[])) : [];
+  machines = inv ? JSON.parse(JSON.stringify(machinesOf(inv))) : [newMachine()];
+  sales = inv ? JSON.parse(JSON.stringify(inv.sales||[])) : [];
+  drawSales();
   $('taxRate').value = 0;
   $('discount').value = 0;
   $('notes').value = inv ? cleanNotes(inv.notes) : cleanNotes(biz.notes);
@@ -492,15 +567,21 @@ $('newBtn').onclick=function(){ openEditor(null); };
 $('edCancel').onclick=function(){ $('edOv').classList.remove('show'); };
 $('edSave').onclick=function(){
   var data = {
-    num: +$('edNum').dataset.num,
+    num: Math.max(1, Math.round(num($('edNum').value))) || nextNumber(),
     client:{name:$('cName').value.trim(), company:$('cCompany').value.trim(), phone:$('cPhone').value.trim(), email:$('cEmail').value.trim(), address:$('cAddr').value.trim()},
-    machine:{title:$('mTitle').value.trim(), serial:$('mSerial').value.trim(), hours:$('mHours').value.trim()},
     issueDate:$('dIssue').value, serviceDate:$('dService').value,
-    items: items.filter(function(i){ return (i.desc||'').trim() || num(i.qty)*num(i.price); }).map(function(i){ return {kind:i.kind, desc:(i.desc||'').trim(), partNo:(i.partNo||'').trim(), qty:num(i.qty), price:num(i.price)}; }),
+    machines: machines.map(function(m){ return {title:(m.title||'').trim(), serial:(m.serial||'').trim(), hours:(m.hours||'').trim(),
+      items:(m.items||[]).filter(function(i){ return (i.desc||'').trim() || num(i.qty)*num(i.price); }).map(function(i){ return {kind:i.kind, desc:(i.desc||'').trim(), partNo:(i.partNo||'').trim(), qty:num(i.qty), price:num(i.price)}; })}; })
+      .filter(function(m){ return m.title || m.serial || m.items.length; }),
+    sales: sales.map(function(s){ return {name:(s.name||'').trim(), brand:(s.brand||'').trim(), model:(s.model||'').trim(), serial:(s.serial||'').trim(), desc:(s.desc||'').trim(), price:num(s.price)}; })
+      .filter(function(s){ return s.name||s.brand||s.model||s.serial||s.desc||s.price; }),
     taxRate:num($('taxRate').value), discount:num($('discount').value), notes:cleanNotes($('notes').value),
     jobIds: editJobIds, updated: Date.now()
   };
-  if(!data.client.name && !data.client.company && !data.items.length){ pop('Add a customer or a line first',''); return; }
+  // also keep the first machine + all lines in the old fields, so older pages still read it
+  data.machine = data.machines[0] ? {title:data.machines[0].title, serial:data.machines[0].serial, hours:data.machines[0].hours} : {title:'',serial:'',hours:''};
+  data.items = allItems(data);
+  if(!data.client.name && !data.client.company && !data.items.length && !data.sales.length){ pop('Add a customer or a line first',''); return; }
   setSync('saving','Saving…');
   var p;
   if(editId){ p=INV.doc(editId).set(data,{merge:true}); }
@@ -514,13 +595,13 @@ $('edSave').onclick=function(){
 };
 
 // ---------- From Labor Ledger ----------
-$('addJob').onclick=function(){
+function openJobPicker(){
   $('jobOv').classList.add('show'); $('jobList').innerHTML='<div class="small" style="margin-top:10px">Loading jobs…</div>'; $('jobQ').value='';
   JOBS.get().then(function(s){
     jobsCache=s.docs.map(function(d){var o=d.data(); o.id=d.id; return o;}).sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
     drawJobs();
   }).catch(function(err){ $('jobList').innerHTML='<div class="small" style="margin-top:10px;color:#991b1b">Couldn’t load Labor Ledger jobs ('+esc(err.code||err.message)+').</div>'; });
-};
+}
 function jobMachine(j){ return [j.brand,j.type,j.model].filter(Boolean).join(' '); }
 function drawJobs(){
   var q=$('jobQ').value.trim().toLowerCase();
@@ -539,37 +620,55 @@ $('jobList').onclick=function(e){
   var j=jobsCache.filter(function(x){return x.id===b.dataset.j;})[0]; if(!j) return;
   var work=(j.done||j.request||'Labor').trim();
   if(j.request && j.done) work = j.done + ' (requested: ' + j.request + ')';
+  var M=machines[jobTarget]||machines[0]; if(!M){ M=newMachine(); machines.push(M); }
   var parts=num(j.tools), labor=num(j.total)-parts;
   if(num(j.rate) && num(j.hoursCharged) && Math.abs(num(j.rate)*num(j.hoursCharged)-labor)<0.01){
-    items.push({kind:'labor', desc:work, qty:num(j.hoursCharged), price:num(j.rate)});
+    M.items.push({kind:'labor', desc:work, qty:num(j.hoursCharged), price:num(j.rate)});
   } else {
-    items.push({kind:'labor', desc:work, qty:1, price:Math.round(labor*100)/100});
+    M.items.push({kind:'labor', desc:work, qty:1, price:Math.round(labor*100)/100});
   }
-  if(parts) items.push({kind:'part', desc:'Parts & supplies', partNo:'', qty:1, price:parts});
+  if(parts) M.items.push({kind:'part', desc:'Parts & supplies', partNo:'', qty:1, price:parts});
   if(!$('cName').value && j.customer) $('cName').value=j.customer;
   if(!$('cCompany').value && j.company) $('cCompany').value=j.company;
   if(!$('cPhone').value && j.phone) $('cPhone').value=j.phone;
   if(!$('cEmail').value && j.email) $('cEmail').value=j.email;
   if(!$('cAddr').value && j.address) $('cAddr').value=j.address;
   if($('cName').value) $('cName').dispatchEvent(new Event('change'));
-  if(!$('mTitle').value) $('mTitle').value=[j.brand,j.model].filter(Boolean).join(' ') || jobMachine(j);
-  if(!$('mSerial').value && j.serial) $('mSerial').value=j.serial;
-  if(!$('mHours').value && j.machineHours) $('mHours').value=j.machineHours;
+  if(!M.title) M.title=[j.brand,j.model].filter(Boolean).join(' ') || jobMachine(j);
+  if(!M.serial && j.serial) M.serial=j.serial;
+  if(!M.hours && j.machineHours) M.hours=j.machineHours;
   if(j.date) $('dService').value=j.date;
   if(editJobIds.indexOf(j.id)<0) editJobIds.push(j.id);
-  $('jobOv').classList.remove('show'); drawItems(); pop('JOB ADDED','');
+  $('jobOv').classList.remove('show'); drawMachines(); pop('JOB ADDED','');
 };
 
 // ---------- Invoice paper ----------
 function paperHTML(inv){
-  var c=inv.client||{}, m=inv.machine||{}, t=totals(inv), notes=cleanNotes(inv.notes);
+  var c=inv.client||{}, ms=repairMachines(inv), sl=salesOf(inv), multi=(ms.length+sl.length)>1, m=ms[0]||{}, t=totals(inv), notes=cleanNotes(inv.notes);
   var bizLines = esc(biz.addr||'').replace(/\n/g,'<br>');
   var contact = [biz.email, biz.phone].filter(Boolean).map(esc).join(' | ');
-  var headline = [m.title, m.serial?'S/N: '+m.serial:''].filter(Boolean).map(esc).join(' | ');
-  var rows = (inv.items||[]).map(function(i){
+  var headline = ms.length ? [m.title, m.serial?'S/N: '+m.serial:''].filter(Boolean).map(esc).join(' | ')
+    : (sl.length===1 ? [saleTitle(sl[0]), sl[0].serial?'S/N: '+sl[0].serial:''].filter(Boolean).map(esc).join(' | ') : '');
+  function itemRow(i){
     var d = esc(i.kind==='part' && i.partNo ? i.partNo+' | '+i.desc : i.desc).replace(/\n/g,'<br>');
     return '<tr><td>'+d+'</td><td class="n">'+(+num(i.qty).toFixed(2))+'</td><td class="n">'+m2(num(i.price))+'</td><td class="n">'+m2(num(i.qty)*num(i.price))+'</td></tr>';
-  }).join('');
+  }
+  var rows = multi
+    ? ms.map(function(mm,k){
+        var lbl=ms.length>1?'Machine '+(k+1)+' repair':'Repair';
+        var head=[lbl+': '+(mm.title||''), mm.serial?'S/N: '+mm.serial:'', mm.hours?'Hours / mileage: '+mm.hours:''].filter(Boolean).map(esc).join(' &nbsp;|&nbsp; ');
+        return '<tr class="msec'+(k===0?' first':'')+'"><td colspan="4">'+head+'</td></tr>'+(mm.items||[]).map(itemRow).join('')+
+          '<tr class="msub"><td colspan="3" class="n">'+lbl+' subtotal</td><td class="n">'+m2(itemsSum(mm.items))+'</td></tr>';
+      }).join('')
+    : (m.items||[]).map(itemRow).join('');
+  if(sl.length){
+    rows += sl.map(function(s,k){
+        var line=[saleTitle(s), s.serial?'S/N: '+s.serial:''].filter(Boolean).map(esc).join(' | ');
+        var top = (k===0 && ms.length) ? ' style="border-top:2.5px solid #111"' : '';
+        return '<tr class="srow"><td'+top+'>'+line+(s.desc?'<br><span style="text-transform:none;color:#333">'+esc(s.desc).replace(/\n/g,'<br>')+'</span>':'')+'</td><td class="n"'+top+'>1</td><td class="n"'+top+'>'+m2(num(s.price))+'</td><td class="n"'+top+'>'+m2(num(s.price))+'</td></tr>';
+      }).join('')+
+      (ms.length?'<tr class="msub"><td colspan="3" class="n">Sales subtotal</td><td class="n">'+m2(salesSum(inv))+'</td></tr>':'');
+  }
   return '<div class="paper">'+
     '<div class="p-head">'+
       '<div>'+(biz.logo!==false?'<img class="p-logo" src="bobs-logo.png" alt="" onerror="this.style.display=\'none\'">':'')+'</div>'+
@@ -577,8 +676,9 @@ function paperHTML(inv){
       '<div class="p-no"><b>Invoice #'+esc(inv.num)+'</b>Issue date<br>'+esc(shortDate(inv.issueDate))+'</div>'+
     '</div>'+
     '<hr class="p-rule">'+
-    (headline?'<div class="p-mach">'+headline+'</div>':'')+
-    (m.hours?'<div class="p-sub">Hours / mileage: '+esc(m.hours)+'</div>':'')+
+    (!multi && headline?'<div class="p-mach">'+headline+'</div>':'')+
+    (multi?'<div class="p-mach">'+[ms.length?ms.length+' repair'+(ms.length>1?'s':''):'', sl.length?sl.length+' sale'+(sl.length>1?'s':''):''].filter(Boolean).join(' · ')+'</div>':'')+
+    (!multi && m.hours?'<div class="p-sub">Hours / mileage: '+esc(m.hours)+'</div>':'')+
     '<hr class="p-thin">'+
     '<div class="p-cols">'+
       '<div><h4>Client</h4>'+[c.company,c.name,c.email,c.phone].filter(Boolean).map(esc).join('<br>')+(c.address?'<br>'+esc(c.address).replace(/\n/g,'<br>'):'')+'</div>'+
@@ -592,6 +692,7 @@ function paperHTML(inv){
       (t.disc?'<div><span>Discount</span><span>−'+m2(t.disc)+'</span></div>':'')+
       
       '<div class="g"><span>Total</span><span>'+m2(t.total)+'</span></div></div>'+
+    (biz.pay?'<div class="p-pay"><span>Payment</span>'+esc(biz.pay)+'</div>':'')+
     (biz.foot?'<div class="p-foot">'+esc(biz.foot)+'</div>':'')+
   '</div>';
 }
@@ -710,14 +811,14 @@ $('cfYes').onclick=function(){
 $('setBtn').onclick=function(){
   $('bName').value=biz.name; $('bAddr').value=biz.addr; $('bPhone').value=biz.phone; $('bEmail').value=biz.email;
   $('bLogo').checked=biz.logo!==false; $('bRate').value=biz.rate||'';
-  $('bNext').value=nextNumber(); $('bNotes').value=biz.notes; $('bFoot').value=biz.foot; $('bTag').value=biz.tag||''; $('bLink').value=biz.link||'';
+  $('bNext').value=nextNumber(); $('bNotes').value=biz.notes; $('bFoot').value=biz.foot; $('bTag').value=biz.tag||''; $('bLink').value=biz.link||''; $('bPay').value=biz.pay||'';
   $('setOv').classList.add('show');
 };
 $('setCancel').onclick=function(){ $('setOv').classList.remove('show'); };
 $('setSave').onclick=function(){
   var d={name:$('bName').value.trim(), addr:$('bAddr').value.trim(), phone:$('bPhone').value.trim(), email:$('bEmail').value.trim(),
     logo:$('bLogo').checked, rate:num($('bRate').value), tax:0, 
-    next:num($('bNext').value)||1001, notes:$('bNotes').value, foot:$('bFoot').value.trim(), tag:$('bTag').value.trim(), link:$('bLink').value.trim()};
+    next:Math.max(1001, num($('bNext').value)||0), notes:$('bNotes').value, foot:$('bFoot').value.trim(), tag:$('bTag').value.trim(), link:$('bLink').value.trim(), pay:$('bPay').value.trim()};
   biz=Object.assign({},DEFAULTS,d);
   SET.set(d,{merge:true}).catch(function(err){ setSync('error','⚠ Not saved: '+(err.code||err.message)); });
   $('setOv').classList.remove('show'); pop('SAVED','');
@@ -734,7 +835,7 @@ if(CUSTOMER_ID){
   document.title='Invoice';
   var custInv=null;
   Promise.all([SET.get(), INV.doc(CUSTOMER_ID).get()]).then(function(res){
-    if(res[0].exists) biz=Object.assign({},DEFAULTS,res[0].data());
+    if(res[0].exists) biz=fixBiz(Object.assign({},DEFAULTS,res[0].data()));
     if(!res[1].exists){ $('cPaper').innerHTML='<div class="empty">This invoice isn’t available.</div>'; return; }
     custInv=res[1].data(); custInv.id=res[1].id;
     document.title='Invoice #'+custInv.num+' - '+biz.name;

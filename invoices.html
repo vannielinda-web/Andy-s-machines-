@@ -371,6 +371,11 @@ function salesOf(inv){ return (inv.sales||[]).filter(function(s){ return s.name|
 function salesSum(inv){ var t=0; salesOf(inv).forEach(function(s){ t+=num(s.price); }); return t; }
 function repairMachines(inv){ return machinesOf(inv).filter(function(m){ return m.title||m.serial||m.hours||(m.items||[]).length; }); }
 function saleTitle(s){ var bm=[s.brand,s.model].filter(Boolean).join(' '); return 'Sale of '+(s.name ? s.name+(bm?' - '+bm:'') : (bm||'machine')); }
+// Older invoices had "work (requested: what they asked)"; show it as Requested / Performed
+function fixDesc(d){
+  var m=/^([\s\S]*?)\s*\(requested:\s*([\s\S]*)\)\s*$/i.exec(d||'');
+  return m ? 'Requested: '+m[2].trim()+'\nPerformed: '+m[1].trim() : (d||'');
+}
 function allItems(inv){ var a=[]; machinesOf(inv).forEach(function(m){ a=a.concat(m.items||[]); }); return a; }
 function itemsSum(list){ var s=0; (list||[]).forEach(function(i){ s+=num(i.qty)*num(i.price); }); return s; }
 function partsTotal(inv){ var s=0; allItems(inv).forEach(function(i){ if(i.kind==='part') s+=num(i.qty)*num(i.price); }); return s; }
@@ -565,6 +570,7 @@ function openEditor(id, copyFrom){
   $('dIssue').value = (!isNew && inv.issueDate) || t;
   $('dService').value = (inv && !copyFrom && inv.serviceDate) || t;
   machines = inv ? JSON.parse(JSON.stringify(machinesOf(inv))) : [newMachine()];
+  machines.forEach(function(m){ (m.items||[]).forEach(function(it){ if(it.kind!=='part') it.desc=fixDesc(it.desc); }); });
   sales = inv ? JSON.parse(JSON.stringify(inv.sales||[])) : [];
   drawSales();
   $('taxRate').value = 0;
@@ -629,8 +635,10 @@ $('jobClose').onclick=function(){ $('jobOv').classList.remove('show'); };
 $('jobList').onclick=function(e){
   var b=e.target.closest('.pick'); if(!b) return;
   var j=jobsCache.filter(function(x){return x.id===b.dataset.j;})[0]; if(!j) return;
-  var work=(j.done||j.request||'Labor').trim();
-  if(j.request && j.done) work = j.done + ' (requested: ' + j.request + ')';
+  // Requested first, then the work Andy performed, on separate lines
+  var req=(j.request||'').trim(), done=(j.done||'').trim();
+  var work = (req?'Requested: '+req:'') + (req&&done?'\n':'') + (done?'Performed: '+done:'');
+  if(!work) work='Labor';
   var M=machines[jobTarget]||machines[0]; if(!M){ M=newMachine(); machines.push(M); }
   var parts=num(j.tools), labor=num(j.total)-parts;
   if(num(j.rate) && num(j.hoursCharged) && Math.abs(num(j.rate)*num(j.hoursCharged)-labor)<0.01){
@@ -661,7 +669,12 @@ function paperHTML(inv){
   var headline = ms.length ? [m.title, m.serial?'S/N: '+m.serial:''].filter(Boolean).map(esc).join(' | ')
     : (sl.length===1 ? [saleTitle(sl[0]), sl[0].serial?'S/N: '+sl[0].serial:''].filter(Boolean).map(esc).join(' | ') : '');
   function itemRow(i){
-    var d = esc(i.kind==='part' && i.partNo ? i.partNo+' | '+i.desc : i.desc).replace(/\n/g,'<br>');
+    var raw = i.kind==='part' && i.partNo ? i.partNo+' | '+i.desc : fixDesc(i.desc);
+    var d = raw.split('\n').map(function(line,n){
+      var m=/^(requested|performed):\s*(.*)$/i.exec(line);
+      var html = m ? '<b>'+esc(m[1])+':</b> '+esc(m[2]) : esc(line);
+      return '<div style="'+(n?'margin-top:6px':'')+'">'+html+'</div>';
+    }).join('');
     return '<tr><td>'+d+'</td><td class="n">'+(+num(i.qty).toFixed(2))+'</td><td class="n">'+m2(num(i.price))+'</td><td class="n">'+m2(num(i.qty)*num(i.price))+'</td></tr>';
   }
   var rows = multi

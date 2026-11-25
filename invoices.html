@@ -287,6 +287,17 @@ body.customer #cust{display:block!important;padding:12px}
 
 <div class="ov" id="cfOv"><div class="cf"><h2 style="color:#991b1b;font-size:18px">Delete this invoice?</h2><p>This can't be undone.</p><div class="btns" style="margin-top:0"><button class="btn" id="cfNo">Keep it</button><button class="btn del" id="cfYes">Delete</button></div></div></div>
 
+<div class="ov" id="smsOv"><div class="cf" style="text-align:left;max-width:380px">
+  <h2 style="color:#7c3aed;font-size:19px;margin-bottom:6px">💬 Text this invoice</h2>
+  <label for="smsTo">Cell phone number to send it to</label>
+  <input class="field" id="smsTo" type="tel" inputmode="tel" autocomplete="off" placeholder="(201) 555-1234" style="font-size:20px;padding:12px">
+  <div id="smsHint" style="margin-top:8px"></div>
+  <div class="btns">
+    <button class="btn" id="smsCancel">Cancel</button>
+    <button class="btn main" id="smsGo">Open Messages</button>
+  </div>
+  <button class="btn" id="smsOther" style="width:100%;margin-top:8px;font-size:13px;padding:9px">Share another way…</button>
+</div></div>
 <div class="pop" id="pop"></div>
 <div id="printArea"></div>
 <datalist id="custList"></datalist>
@@ -783,17 +794,36 @@ $('vSave').onclick=function(){
 };
 $('vShare').onclick=function(){
   var inv=invoices.filter(function(x){return x.id===viewId;})[0]; if(!inv) return;
-  location.href=smsUrl(inv);
+  var c=inv.client||{}, ph=(c.phone||'').trim();
+  $('smsTo').value='';
+  $('smsHint').innerHTML = ph ? '<button class="btn" id="smsUse" style="padding:7px 10px;font-size:13px">Use number on invoice: '+esc(ph)+'</button>' : '';
+  $('smsOv').classList.add('show'); setTimeout(function(){ $('smsTo').focus(); },50);
+};
+$('smsHint').onclick=function(e){ if(e.target.closest('#smsUse')){ var inv=invoices.filter(function(x){return x.id===viewId;})[0]; $('smsTo').value=((inv&&inv.client)||{}).phone||''; $('smsTo').focus(); } };
+$('smsCancel').onclick=function(){ $('smsOv').classList.remove('show'); };
+$('smsGo').onclick=function(){
+  var inv=invoices.filter(function(x){return x.id===viewId;})[0]; if(!inv) return;
+  var to=$('smsTo').value.replace(/[^\d+]/g,'');
+  if(to.replace(/\D/g,'').length<7){ pop('Type the phone number',''); $('smsTo').focus(); return; }
+  $('smsOv').classList.remove('show');
+  location.href=smsUrl(inv, to);
+};
+$('smsTo').addEventListener('keydown',function(e){ if(e.key==='Enter') $('smsGo').click(); });
+$('smsOther').onclick=function(){
+  var inv=invoices.filter(function(x){return x.id===viewId;})[0]; if(!inv) return;
+  var body=decodeURIComponent(smsUrl(inv,'').split('body=')[1]);
+  if(navigator.share){ navigator.share({text:body}).catch(function(){}); $('smsOv').classList.remove('show'); }
+  else { pop('Not available on this phone',''); }
 };
 function niceName(n){ n=n||''; return n===n.toUpperCase() ? n.toLowerCase().replace(/(^|\s)\S/g,function(c){return c.toUpperCase();}) : n; }
-function smsUrl(inv){
+function smsUrl(inv, to){
   var c=inv.client||{};
   var site=(biz.link||'').trim().replace(/^https?:\/\//i,'').replace(/\/+$/,'');
   var link = site ? 'https://'+site+'/?i='+encodeURIComponent(inv.id) : location.origin+location.pathname+'?v='+encodeURIComponent(inv.id);
   var msg='Hi'+(c.name?' '+c.name.split(' ')[0]:'')+', here is your invoice #'+inv.num+' from '+niceName(biz.name)+' for '+m2(totals(inv).total)+':\n'+link+'\nThank you!';
   var ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
   // No number on purpose: Andy types or picks the contact himself
-  return 'sms:'+(ios?'&':'?')+'body='+encodeURIComponent(msg);
+  return 'sms:'+(to||'')+(ios?'&':'?')+'body='+encodeURIComponent(msg);
 }
 $('vDup').onclick=function(){
   var inv=invoices.filter(function(x){return x.id===viewId;})[0]; if(!inv) return;
